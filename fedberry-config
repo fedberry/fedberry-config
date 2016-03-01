@@ -1,0 +1,716 @@
+#!/bin/sh
+# Copyright (C) 2016, Vaughan Agrez <devel@agrez.net>
+# fedberry-config is released under GPL licence (version 3)
+# See LICENSE file for copyright and license details
+
+
+###
+# VARIABLE_DEFINITIONS
+###
+
+### Software
+NAME=fedberry-config
+AUTHORS="Vaughan Agrez"
+YEAR=2016
+VERSION=0.1
+BUG_REPORTS="https://github.com/agrez/fedberry-config"
+
+
+### Environment variables
+BOOT_DIR=/boot
+CFG_TXT=$BOOT_DIR/config.txt
+DTO_DIR=$BOOT_DIR/overlays
+
+
+### Misc standard messages
+TXT_ENB="is currently ENABLED in $CFG_TXT\n\nDo you want to DISABLE it?"
+TXT_DIS="is currently DISABLED in $CFG_TXT\n\nDo you want to ENABLE it?"
+
+
+### Default DTP & config opt values 
+declare -A DEF_VALS=(
+    [gpu_mem]=32
+    [avoid_warnings]=2
+    [start_x]=0
+    [i2c]=on
+    [i2s]=on
+    [spi]=on
+    [audio]=on
+    )
+    
+### Name references for various DTOs, DTPs & config options 
+declare -A REF_NAMES=(
+    [start_x]="RPi Camera"
+    [mmc]="BCM2835 MMC"
+    [vc4-kms-v3d]="VC4 Mesa" 
+    [lirc-rpi]="RPi LIRC"
+    [i2c-rtc]="I2C RTC"
+    [i2c]="I2C interface" 
+    [i2s]="I2S interface"
+    [spi]="SPI interface" 
+    [audio]="Alsa audio interface"
+    )
+
+
+###
+# FUNCTION_DEFINITIONS
+###
+
+msg_box()
+{
+    if [ -z "$2" ]; then
+        whiptail --msgbox "$1" 20 60
+    else
+        whiptail --msgbox --title "$1" "$2" 20 60
+    fi
+}
+
+
+yes_no()
+{
+    if [ -z "$2" ]; then
+        whiptail --yesno "$1" 20 60
+    else
+        whiptail --yesno --title "$1" "$2" 20 60
+    fi
+}
+
+
+ask_reboot()
+{
+    # If needed, offer a reboot
+    if [[ $SGST_REBOOT -eq 1 ]]; then
+        if [ -z "$1" ]; then
+            yes_no "Reboot Required" "A reboot is required for changes to take affect.\n\nDo you want to reboot now?"
+        else    
+            yes_no "Reboot Required" "$1\n\nDo you want to reboot now?"
+        fi
+      
+        if [ $? == 0 ]; then
+            sync
+            # add a timer option here to delay reboot by 5 secs?
+            shutdown -r now
+            exit 0
+        else
+            SGST_REBOOT=0
+        fi
+    fi
+}
+
+
+dialog_size()
+{
+    DLG_H=17
+    DLG_MH=$(($DLG_H-9))
+    DLG_W=$(tput cols)
+    
+    if [ -z "$DLG_W" -a "$DLG_W" -lt 60 ]; then
+        DLG_W=80
+    elif [ "$DLG_W" -gt 178 ]; then
+        DLG_W=120
+    fi
+}
+
+
+dtree_enable()
+{
+    #Force enabling of Device Tree support
+    if [[ $(grep -cim1 ^device_tree= $CFG_TXT) -eq 1 ]]; then
+        #remember, its the opposite!
+        cfg_disable device_tree
+    fi
+}
+
+
+
+dto_probe()
+{
+    # Define the DTO variables
+    DTO="dtoverlay=$1"
+    DTB="$1-overlay.dtb"
+    
+    # Test config.txt for DTO
+    DTO_ENABLED=$(grep -cim1 ^$DTO $CFG_TXT)
+    DTO_DISABLED=$(grep -cim1 ^#$DTO $CFG_TXT)
+}
+
+
+
+dto_enable()
+{
+    dto_probe $1
+    if [ $DTO_DISABLED -eq 1 ]; then
+        dto_write enable $1
+        SGST_REBOOT=1
+    elif [ $DTO_ENABLED -ne 1 ]; then
+        dto_write add $1
+        SGST_REBOOT=1
+    fi
+}
+
+
+dto_disable()
+{
+    dto_probe $1
+    if [ $DTO_ENABLED -eq 1 ]; then
+        dto_write disable $1
+        SGST_REBOOT=1
+    fi
+}
+
+
+
+
+dto_write()
+{
+    if [ $1 == "enable" ]; then
+        dtree_enable
+        sed -i "s/^#$DTO/$DTO/" $CFG_TXT
+    elif [ $1 == "add" ]; then
+        dtree_enable
+        echo -e "$DTO" >> $CFG_TXT
+    elif [ $1 == "disable" ]; then
+        sed -i "s/^$DTO/#$DTO/" $CFG_TXT
+    fi
+}
+
+
+dto_prm_update()
+{
+    #1st arg = DTO name; 2nd arg = new parameter value
+    sed -i "s/^dtoverlay=$1.*$/dtoverlay=$1,$2/" $CFG_TXT
+}
+
+
+
+dto_ask()
+{
+    # reset for each selection 
+    BAILED=0
+    DRV_DISABLED=0
+    
+    # test for no-reboot switch
+    NO_REBOOT=$(echo "$@"| grep -ci "\-\-no\-reboot")
+    
+    # Test config.txt for DTO references
+    dto_probe $1
+        
+    if [ ! -f $DTO_DIR/$DTB ]; then
+        msg_box "ERROR" "$DTB is not available in the current kernel"
+        NO_OVERLAY=1
+    else
+        if [ $DTO_ENABLED -eq 1 ]; then
+            #DTO is enabled already
+            yes_no "${REF_NAMES[$1]} $TXT_ENB"
+            if [ $? -eq 0 ]; then
+                dto_write disable $1
+                SGST_REBOOT=1
+                DRV_DISABLED=1
+            else
+                BAILED=1
+            fi
+        elif [ $DTO_DISABLED -eq 1 ]; then
+            #DTO is disabled
+            yes_no "${REF_NAMES[$1]} $TXT_DIS"
+            if [ $? -eq 0 ]; then
+                dto_write enable $1
+                SGST_REBOOT=1
+            else
+                BAILED=1
+            fi
+        else
+            #no DTO ref exists, add the requested DTO
+            yes_no "${REF_NAMES[$1]} $TXT_DIS"
+            if [ $? -eq 0 ]; then
+                dto_write add $1
+                SGST_REBOOT=1
+            else
+                BAILED=1
+            fi
+        fi
+        
+        # If needed, offer a reboot
+        if [[ $NO_REBOOT -ne 1 ]] && [[ $SGST_REBOOT -eq 1 ]]; then
+            ask_reboot
+        fi
+    fi
+}
+
+
+dtp_probe()
+{
+    # Test for config option
+    DTP_ENABLED=$(grep -cim1 ^dtparam=$1 $CFG_TXT)
+    DTP_DISABLED=$(grep -cim1 ^#dtparam=$1 $CFG_TXT)
+    DTP_VAL=$(grep -E "^dtparam=$1|^#dtparam=$1" $CFG_TXT| sed "s/.*$1=//")
+    
+}
+
+
+dtp_enable()
+{
+    dtp_probe $1
+    if [ $DTP_DISABLED -eq 1 ]; then
+        dtp_write enable $1
+        SGST_REBOOT=1
+    elif [ $DTP_ENABLED -ne 1 ]; then
+        dtp_write add $1
+        SGST_REBOOT=1
+    fi
+}
+
+
+dtp_disable()
+{
+    dtp_probe $1
+    if [ $DTP_ENABLED -eq 1 ]; then
+        dtp_write disable $1
+        SGST_REBOOT=1
+    fi
+}
+
+
+dtp_write()
+{
+    if [ $1 == "enable" ]; then
+        sed -i "s/^#dtparam=$2/dtparam=$2/" $CFG_TXT
+    elif [ $1 == "add" ]; then
+        echo "dtparam=$2=${DEF_VALS[$2]}" >> $CFG_TXT
+    elif [ $1 == "disable" ]; then
+        sed -i "s/^dtparam=$2/#dtparam=$2/" $CFG_TXT
+    fi
+}
+
+
+dtp_ask()
+{
+    # reset for each selection 
+    BAILED=0
+    
+    # test for no-reboot switch
+    NO_REBOOT=$(echo "$@"| grep -ci "\-\-no\-reboot")
+        
+   # Test for config.txt option
+    dtp_probe $1
+        
+    if [ $DTP_ENABLED -eq 1 ]; then
+        #dtp ref is enabled already
+        yes_no "${REF_NAMES[$1]} $TXT_ENB"
+        if [ $? -eq 0 ]; then
+            dtp_write disable $1
+            SGST_REBOOT=1
+            OPT_DISABLED=1
+        else
+            BAILED=1
+        fi
+    elif [ $DTP_DISABLED -eq 1 ]; then
+        #config ref is disabled
+        yes_no "${REF_NAMES[$1]} $TXT_DIS"
+        if [ $? -eq 0 ]; then
+            dtp_write enable $1
+            SGST_REBOOT=1
+        else
+            BAILED=1        
+        fi
+    else
+        #no config ref exists, add it
+        yes_no "${REF_NAMES[$1]} $TXT_DIS"
+        if [ $? -eq 0 ]; then
+            dtp_write add $1
+            SGST_REBOOT=1
+        else
+            BAILED=1
+        fi
+    fi
+        
+    # If needed, offer a reboot
+    if [[ $NO_REBOOT -ne 1 ]] && [[ $SGST_REBOOT -eq 1 ]]; then
+        ask_reboot
+    fi
+}
+
+
+
+cfg_probe()
+{
+    # Test for config option
+    CFG_ENABLED=$(grep -cim1 ^$1 $CFG_TXT)
+    CFG_DISABLED=$(grep -cim1 ^#$1 $CFG_TXT)
+    CFG_VAL=$(grep -E "^$1|^#$1" $CFG_TXT| sed "s/.*$1=//")
+}
+
+
+cfg_enable()
+{
+    cfg_probe $1
+    if [ $CFG_DISABLED -eq 1 ]; then
+        cfg_write enable $1
+        SGST_REBOOT=1
+    elif [ $CFG_ENABLED -ne 1 ]; then
+        cfg_write add $1
+        SGST_REBOOT=1
+    fi
+}
+
+
+cfg_disable()
+{
+    cfg_probe $1
+    if [ $CFG_ENABLED -eq 1 ]; then
+        cfg_write disable $1
+        SGST_REBOOT=1
+    fi
+}
+
+
+cfg_write()
+{
+    if [ $1 == "enable" ]; then
+        sed -i "s/^#$2/$2/" $CFG_TXT
+    elif [ $1 == "add" ]; then
+        echo "$2=${DEF_VALS[$2]}" >> $CFG_TXT
+    elif [ $1 == "disable" ]; then
+        sed -i "s/^$2/#$2/" $CFG_TXT
+    fi
+}
+
+
+config_ask()
+{
+    # reset for each selection 
+    BAILED=0
+    
+    # test for no-reboot switch
+    NO_REBOOT=$(echo "$@"| grep -ci "\-\-no\-reboot")
+        
+   # Test for config.txt option
+    cfg_probe $1
+        
+    if [ $CFG_ENABLED -eq 1 ]; then
+        #config ref is enabled already
+        yes_no "${REF_NAMES[$1]} $TXT_ENB"
+        if [ $? -eq 0 ]; then
+            cfg_write disable $1
+            SGST_REBOOT=1
+            OPT_DISABLED=1
+        else
+            BAILED=1
+        fi
+    elif [ $CFG_DISABLED -eq 1 ]; then
+        #config ref is disabled
+        yes_no "${REF_NAMES[$1]} $TXT_DIS"
+        if [ $? -eq 0 ]; then
+            cfg_write enable $1
+            SGST_REBOOT=1
+        else
+            BAILED=1        
+        fi
+    else
+        #no config ref exists, add it
+        yes_no "${REF_NAMES[$1]} $TXT_DIS"
+        if [ $? -eq 0 ]; then
+            cfg_write add $1
+            SGST_REBOOT=1
+        else
+            BAILED=1
+        fi
+    fi
+        
+    # If needed, offer a reboot
+    if [[ $NO_REBOOT -ne 1 ]] && [[ $SGST_REBOOT -eq 1 ]]; then
+        ask_reboot
+    fi
+}
+
+
+cfg_check()
+{
+    # We need a config.txt
+    if [ ! -f $CFG_TXT ]; then
+        echo "Can't find $CFG_TXT\nPlease check your system!"
+        #Offer the option to create one here?
+        exit 1
+    fi 
+
+    # NOTE: It adds another layer of complexity to deal with device_tree_param/dtparam
+    # and device_tree_overlay/dtoverlay refs independently. So if found, just replace
+    # them all accordingly
+    
+    if [[ $(grep -cim1 device_tree_param $CFG_TXT) -eq 1 ]]; then
+        sed -i 's/device_tree_param/dtparam/' $CFG_TXT
+    fi
+    
+    if [[ $(grep -cim1 device_tree_overlay $CFG_TXT) -eq 1 ]]; then
+        sed -i 's/device_tree_overlay/dtoverlay/' $CFG_TXT
+    fi
+}
+
+
+cfg_val_update()
+{
+    #1st arg = config / paramater name; 2nd arg = new parameter value
+    sed -i "s/^$1=.*$/$1=$2/" $CFG_TXT
+}
+
+
+
+select_kernel()
+{
+    #current running kernel
+    CUR_KERN=$(uname -r |sed 's/.fc23.armv7hl//')
+    
+    #list installed kernels (read into an array)
+    pushd $BOOT_DIR &>/dev/null
+    read -ra KERNEL_LIST <<<$(ls vmlinuz* |sed -e 's/vmlinuz-//' -e 's/.fc23.armv7hl//' \
+    |awk '!/^ / && NF {print $1; print $1}')
+    popd &>/dev/null
+    
+    #make the selection
+    SEL=$(whiptail --menu "Select the kernel version for next boot:" \
+    --title "Current running kernel version: $CUR_KERN" --notags \
+    $DLG_H $DLG_W $DLG_MH "${KERNEL_LIST[@]}" 3>&1 1>&2 2>&3)
+    
+    #kernel has been selected
+    if [ $? -eq 0 ]; then
+        VMLINUZ=$(echo vmlinuz-$SEL.fc23.armv7hl)
+        DTB_DIR=$(echo dtb-$SEL.fc23.armv7hl)
+        
+        #copy over desired kernel
+        cp -f $BOOT_DIR/$VMLINUZ $BOOT_DIR/kernel7.img &>/dev/null
+        
+        #clean overlay dir then copy required dtb files
+        rm -f $BOOT_DIR/overlays/* &>/dev/null
+        cp $BOOT_DIR/$DTB_DIR/overlays/* $BOOT_DIR/overlays/ &>/dev/null
+        cp -f $BOOT_DIR/$DTB_DIR/*.dtb $BOOT_DIR/ &>/dev/null
+        SGST_REBOOT=1
+        
+        #offer a reboot
+        ask_reboot "$SEL will be used for the next boot"
+     fi
+}
+
+
+mesa_vc4()
+{
+    msg_box "WARNING" "The Mesa VC4 driver is EXPERIMENTAL and a W.I.P. It will likely cause system instability."
+    dto_ask vc4-kms-v3d --no-reboot
+    if [[ $BAILED -ne 1 ]] && [[ $NO_OVERLAY -ne 1 ]]; then
+        if [[ $DRV_DISABLED -eq 1 ]]; then
+            cfg_enable gpu_mem
+            cfg_disable avoid_warnings
+        else
+            cfg_disable gpu_mem
+            cfg_enable avoid_warnings
+            #currently conflicts with pi camera requirements
+            cfg_disable start_x
+        fi
+    fi
+    ask_reboot
+}
+
+
+pi_camera()
+{
+    config_ask start_x --no-reboot
+    if [[ $BAILED -ne 1 ]]; then
+        if [[ $OPT_DISABLED -ne 1 ]]; then
+            cfg_enable gpu_mem
+            #currrently conflicts with the vc4 driver requirements
+            dto_disable vc4-kms-v3d
+            cfg_disable avoid_warnings
+            if [[ $CFG_VALUE -lt 128 ]]; then
+                cfg_val_update gpu_mem 128
+            fi
+        fi
+    fi
+    ask_reboot
+}
+
+
+menu_rtc()
+{   
+    #We don't have to enable i2c interface first here as the DTO should
+    #automatically enable it (refer: /boot/overlay/README)
+    dto_ask i2c-rtc --no-reboot
+    if [[ $BAILED -ne 1 ]] && [[ $DRV_DISABLED -ne 1 ]]; then
+        while true; do
+            SEL=$(whiptail --menu "Choose your I2C Real Time Clock device" \
+            --backtitle "$NAME - $VERSION" \
+            --title "RTC Device Selection Menu" $DLG_H $DLG_W $DLG_MH \
+            --ok-button Select \
+            "1. DS1307 " "Select the DS1307 device" \
+            "2. DS3231  " "Select the DS3231 device" \
+            "3. MCP7941x " "Select the MCP7941x device" \
+            "4. PCF2127 " "Select the PCF2127 device" \
+            "5. PCF8523 " "Select the PCF8523 device" \
+            "6. PCF8563 " "Select the PCF8563 device" \
+            3>&1 1>&2 2>&3)
+            RET=$?
+            if [ $RET == 1 ]; then
+                break
+            elif [ $RET == 0 ]; then
+                case "$SEL" in
+                    1.*) dto_prm_update i2c-rtc ds1307; break ;;
+                    2.*) dto_prm_update i2c-rtc ds3231; break ;;
+                    3.*) dto_prm_update i2c-rtc mcp7941x; break ;;
+                    4.*) dto_prm_update i2c-rtc pcf2127; break;;
+                    5.*) dto_prm_update i2c-rtc pcf8523; break ;;
+                    6.*) dto_prm_update i2c-rtc pcf8563; break ;;
+                    *) msg_box "Error: unrecognized option" ;;
+                esac || msg_box "There was an error running option $SEL"
+            fi
+        done            
+    fi
+    ask_reboot
+}
+
+
+menu_drivers()
+{
+    while true; do
+        SEL=$(whiptail --menu "Choose a driver to enable or disable" \
+        --backtitle "$NAME - $VERSION" \
+        --title "Driver Selection Menu" $DLG_H $DLG_W $DLG_MH \
+        --cancel-button "Main Menu" --ok-button Select \
+        "1. Mesa DRM VC4 " "Mesa/DRM VC4 driver for Rpi (Experimental)" \
+        "2. Pi Camera  " "Enable or disable the RPi Camera" \
+        "3. LIRC RPi " "Linux Infrared Remote Control for the RPi (LIRC)" \
+        "4. I2C RTC " "Realtime Cock (RTC) support" \
+        "5. BCM2835 MMC " "bcm2835-mmc SD/MMC driver" \
+        3>&1 1>&2 2>&3)
+        RET=$?
+        if [ $RET == 1 ]; then
+            break
+        elif [ $RET == 0 ]; then
+            case "$SEL" in
+                1.*) mesa_vc4 ;;
+                2.*) pi_camera ;;
+                3.*) dto_ask lirc-rpi ;;
+                4.*) menu_rtc ;;
+                5.*) dto_ask mmc ;;
+                *) msg_box "Error: unrecognized option" ;;
+            esac || msg_box "There was an error running option $SEL"
+        fi
+    done 
+}
+
+
+menu_params()
+{
+       while true; do
+        SEL=$(whiptail --menu "Choose a parameter to enable or disable" \
+        --backtitle "$NAME - $VERSION" \
+        --title "Option Selection Menu" $DLG_H $DLG_W $DLG_MH \
+        --cancel-button "Main Menu" --ok-button Select \
+        "1. I2C interface " "Inter-Integrated Circuit (i2c) interface" \
+        "2. I2S interface  " "Inter-IC Sound, (i2s) interface" \
+        "3. SPI interface " "Serial Peripheral Interface" \
+        "4. Audio " "On-board ALSA audio interface" \
+        3>&1 1>&2 2>&3)
+        RET=$?
+        if [ $RET == 1 ]; then
+            break
+        elif [ $RET == 0 ]; then
+            case "$SEL" in
+                1.*) dtp_ask i2c ;;
+                2.*) dtp_ask i2s ;;
+                3.*) dtp_ask spi ;;
+                4.*) dtp_ask audio ;;
+                *) msg_box "Error: unrecognized option" ;;
+            esac || msg_box "There was an error running option $SEL"
+        fi
+    done 
+}
+
+
+menu_main()
+{
+    while true; do
+        SEL=$(whiptail --menu "Choose an Option" --backtitle "$NAME - $VERSION" \
+        --title "System Configuration" $DLG_H $DLG_W $DLG_MH \
+        --cancel-button Exit --ok-button Select \
+        "1. Set Boot Kernel  " "Select which kernel you want to use at boot" \
+        "2. DT Paramters  " "Enable or disable Device Tree (DT) parameters" \
+        "3. Hardware Support  " "Enable or disable hardware support / drivers" \
+        "4. About $NAME  " "Information about this configuration tool" \
+        3>&1 1>&2 2>&3)
+        RET=$?
+        if [ $RET == 1 ]; then
+            exit 0
+        elif [ $RET == 0 ]; then
+            case "$SEL" in
+                1.*) select_kernel ;;
+                2.*) menu_params ;;                
+                3.*) menu_drivers ;;
+                4.*) about ;;
+                *) msg_box "Error: unrecognized option" ;;
+            esac || msg_box "There was an error running option $SEL"
+        else
+            exit 1
+        fi
+    done
+}
+
+
+about()
+{
+    msg_box "About $NAME - Version: $VERSION"  "\
+$NAME allows for easy configuration of various \
+system wide options in FedBerry. If you have heavily \
+customised your FedBerry installation, some configure \
+options may not function correctly.\n\n\
+Copyright (C) $YEAR, $AUTHORS.\n\
+$NAME is released under GPL licence version 3.\n\n\
+Report issues to: $BUG_REPORTS"
+}
+
+
+main()
+{
+
+    if [ $UID != 0 ]; then
+        echo "This script must be run as root user."
+        exit 1
+    fi
+
+    #we require whiptail
+    if [ ! -f /usr/bin/whiptail ]; then
+        echo "$NAME requires whiptail\n Please install"
+        #offer to install here?
+        exit 1
+    fi 
+
+    # check for & clean config.txt if necessary
+    cfg_check
+    
+    # set WT dialog menu sizes
+    dialog_size
+    
+    # start main menu
+    menu_main
+}
+
+
+
+###
+# Main
+###
+
+case $1 in
+    "-dto-enable" )
+        dto_enable $2 ;;
+    "-dto-disable" )
+        dto_disable $2 ;;
+    "-dtp-enable" )
+        dtp_enable $2 ;;
+    "-dtp-disable" )
+        dtp_disable $2 ;;
+    "-cfg-enable" )
+        cfg_enable $2 ;;
+    "-cfg-disable" )
+        cfg_disable $2 ;;        
+    "-version" )
+        echo "$NAME - Version: $VERSION" ;;
+    "" )
+        main ;;
+esac
