@@ -139,12 +139,17 @@ dto_probe()
 dto_enable()
 {
     dto_probe $1
-    if [ $DTO_DISABLED -eq 1 ]; then
-        dto_write enable $1
-        SGST_REBOOT=1
-    elif [ $DTO_ENABLED -ne 1 ]; then
-        dto_write add $1
-        SGST_REBOOT=1
+    
+    if [ ! -f $DTO_DIR/$DTB ]; then
+        echo "ERROR:" "$DTB is not available in the current kernel"
+    else
+        if [ $DTO_DISABLED -eq 1 ]; then
+            dto_write enable $1
+            SGST_REBOOT=1
+        elif [ $DTO_ENABLED -ne 1 ]; then
+            dto_write add $1
+            SGST_REBOOT=1
+        fi
     fi
 }
 
@@ -196,7 +201,7 @@ dto_ask()
     dto_probe $1
         
     if [ ! -f $DTO_DIR/$DTB ]; then
-        msg_box "ERROR" "$DTB is not available in the current kernel"
+        msg_box "ERROR:" "$DTB is not available in the current kernel"
         NO_OVERLAY=1
     else
         if [ $DTO_ENABLED -eq 1 ]; then
@@ -665,20 +670,51 @@ Report issues to: $BUG_REPORTS"
 }
 
 
-main()
+requires()
 {
 
     if [ $UID != 0 ]; then
         echo "This script must be run as root user."
         exit 1
     fi
+    
+    
+    if [[ $NO_DIALOG -eq 1 ]]; then
+        # we require whiptail
+        if [ ! -f /usr/bin/whiptail ]; then
+            echo "$NAME requires whiptail\n Please install"
+            #offer to install here?
+            exit 1
+        fi
+    fi
 
-    #we require whiptail
-    if [ ! -f /usr/bin/whiptail ]; then
-        echo "$NAME requires whiptail\n Please install"
-        #offer to install here?
-        exit 1
-    fi 
+}
+
+
+cmd_parse()
+{
+    #we don't want a dialog or questions
+    NO_DIALOG=1
+
+    # check for script run requirements
+    requires
+    
+    # check for & clean config.txt if necessary
+    cfg_check
+    
+    # exclude some special cases for the moment
+    if [[ "$2" == "vc4-kms-v3d" ]] || [[ "$2" == "start_x" ]]; then
+        echo "Enabling/disabling ${REF_NAMES[$2]} via cmdline is currently unsupported"; exit 0
+    else
+        $1 $2
+    fi
+}
+
+
+main()
+{
+    # check for script run requirements
+    requires
 
     # check for & clean config.txt if necessary
     cfg_check
@@ -697,20 +733,22 @@ main()
 ###
 
 case $1 in
-    "-dto-enable" )
-        dto_enable $2 ;;
-    "-dto-disable" )
-        dto_disable $2 ;;
-    "-dtp-enable" )
+    "-dto-enable")
+        cmd_parse dto_enable $2 ;;
+    "-dto-disable")
+        cmd_parse dto_disable $2 ;;
+    "-dtp-enable")
         dtp_enable $2 ;;
-    "-dtp-disable" )
+    "-dtp-disable")
         dtp_disable $2 ;;
-    "-cfg-enable" )
-        cfg_enable $2 ;;
-    "-cfg-disable" )
-        cfg_disable $2 ;;        
-    "-version" )
+    "-cfg-enable")
+        cmd_parse cfg_enable $2 ;;
+    "-cfg-disable")
+        cmd_parse cfg_enable $2 ;;        
+    "-version")
         echo "$NAME - Version: $VERSION" ;;
-    "" )
+    *)
+        echo "Unknown cmdline argument(s) $@" ;;
+    "")
         main ;;
 esac
