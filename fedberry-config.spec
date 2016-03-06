@@ -7,7 +7,7 @@ Release:    1%{?dist}
 License:    GPLv3+
 Summary:    Easy configuration of various system options in FedBerry
 Group:      Applications/System
-URL:        https://github.com/agrez/fedberry-config
+URL:        https://github.com/fedberry/fedberry-config
 Source0:    https://raw.githubusercontent.com/%{bname}/%{name}/master/%{name}
 Source1:    https://raw.githubusercontent.com/%{bname}/%{name}/master/LICENSE
 Source2:    https://raw.githubusercontent.com/%{bname}/%{name}/master/README.md
