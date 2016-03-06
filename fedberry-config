@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -
 # Copyright (C) 2016, Vaughan Agrez <devel@agrez.net>
 # fedberry-config is released under GPL licence (version 3)
 # See LICENSE file for copyright and license details
@@ -58,10 +58,14 @@ declare -A REF_NAMES=(
 
 msg_box()
 {
-    if [ -z "$2" ]; then
-        whiptail --msgbox "$1" 20 60
+    if [[ $NO_DIALOG -ne 1 ]]; then
+        if [ -z "$2" ]; then
+            whiptail --msgbox "$1" 20 60
+        else
+            whiptail --msgbox --title "$1" "$2" 20 60
+        fi
     else
-        whiptail --msgbox --title "$1" "$2" 20 60
+        echo -e "$1\n$2"
     fi
 }
 
@@ -532,6 +536,77 @@ pi_camera()
 }
 
 
+rootfs_ask()
+{
+    yes_no "Expand Root Filesystem" "Do you want to grow your root filesystem?\n\nWARNING: Before continuing, please save any work as the system will automatically reboot after re-partitioning"
+        if [ $? == 0 ]; then
+            touch /.rootfs-repartition
+            rootfs_grow
+        fi
+}
+
+
+rootfs_grow()
+{   
+    # Do we need to repartition?
+    if [ ! -e /.rootfs-repartition ]; then
+        return 0
+    fi
+
+    # Check for kernel cmdline parameter 'nofsresize'
+    if [ $(cat /proc/cmdline |grep -cim1 nofsresize) -eq 1 ];then
+        return 0
+    fi
+    
+    if [ ! -e /.rootfs-grow ]; then
+        # Grab required partition & block device information
+        ROOT_PART=$(mount |grep 'on / type'|awk '{ print $1 }')
+        BLK_DEV=$(echo ${ROOT_PART//[p,1-9]/})
+        DEV_INFO=$(fdisk -l $BLK_DEV)
+        PART_INFO=( $(echo "$DEV_INFO" |awk 'END{print}') )
+        LAST_PART=$(echo ${PART_INFO[0]})    
+    
+        if [ "$ROOT_PART" != "$LAST_PART" ]; then
+            msg_box "Root partition $ROOT_PART is not the last partiton. Can not proceed."
+            rm -f /.rootfs-repartition
+            return 0
+        fi
+    
+        SIZE_INFO=( $(echo "$DEV_INFO" |grep "Disk $BLK_DEV") )
+        TOTAL_SECTS=$(echo ${SIZE_INFO[6]})
+        START_SECT=$(echo ${PART_INFO[1]})
+        END_SECT=$(echo ${PART_INFO[2]})
+        PART_NUM=$(echo ${ROOT_PART//[!1-9]/})
+        FREE_SECTS=$(($TOTAL_SECTS - $END_SECT))
+    
+        # Ensure there is enough space to grow the root partition
+        if [ $FREE_SECTS -lt 10 ]; then
+            msg_box "Not enough space remaining on $ROOT_PART. The root parition can not be further expanded."
+            rm -f /.rootfs-repartition
+            return 0
+        fi
+    
+        #SECT_INFO=( $(echo "$DEV_INFO" |grep "Sector size") )
+        #SECT_SIZE=$(echo ${SECT_INFO[3]})
+        #msg_box "$(($FREE_SECTS - 1)) sectors available for root parition expansion.\nGrowing $ROOT_PART by $((($FREE_SECTS - 1) * $SECT_SIZE / 1024)) MB"
+    
+        # Uggh! I know, this is an ugly hack but at the moment I just don't trust parted
+        # to do the job on SD cards >=64GB. It seems to mess things up!
+        echo -e "\np\nd\n$PART_NUM\nn\np\n$PART_NUM\n$START_SECT\n\nw"| fdisk $BLK_DEV &>/dev/null
+        
+        touch /.rootfs-grow
+        systemctl enable rootfs-grow.service
+        systemctl reboot
+    else
+        ROOT_PART=$(mount |grep 'on / type'|awk '{ print $1 }')
+        resize2fs $ROOT_PART &>/dev/null
+        rm -f /.rootfs-grow /.rootfs-repartition
+        # Don't want it running every boot as its job is already done.
+        systemctl disable rootfs-grow.service
+    fi
+}
+
+
 menu_rtc()
 {   
     #We don't have to enable i2c interface first here as the DTO should
@@ -637,7 +712,8 @@ menu_main()
         "1. Set Boot Kernel  " "Select which kernel you want to use at boot" \
         "2. DT Paramters  " "Enable or disable Device Tree (DT) parameters" \
         "3. Hardware Support  " "Enable or disable hardware support / drivers" \
-        "4. About $NAME  " "Information about this configuration tool" \
+        "4. Expand Root FS  " "Expand (grow) root filesystem on SD card" \
+        "5. About $NAME  " "Information about this configuration tool" \
         3>&1 1>&2 2>&3)
         RET=$?
         if [ $RET == 1 ]; then
@@ -647,7 +723,8 @@ menu_main()
                 1.*) select_kernel ;;
                 2.*) menu_params ;;                
                 3.*) menu_drivers ;;
-                4.*) about ;;
+                4.*) rootfs_ask ;;
+                5.*) about ;;
                 *) msg_box "Error: unrecognized option" ;;
             esac || msg_box "There was an error running option $SEL"
         else
@@ -691,7 +768,7 @@ requires()
 }
 
 
-cmd_parse()
+cmdline()
 {
     #we don't want a dialog or questions
     NO_DIALOG=1
@@ -733,22 +810,25 @@ main()
 ###
 
 case $1 in
-    "-dto-enable")
-        cmd_parse dto_enable $2 ;;
-    "-dto-disable")
-        cmd_parse dto_disable $2 ;;
-    "-dtp-enable")
+    "--dto-enable")
+        cmdline dto_enable $2 ;;
+    "--dto-disable")
+        cmdline dto_disable $2 ;;
+    "--dtp-enable")
         dtp_enable $2 ;;
-    "-dtp-disable")
+    "--dtp-disable")
         dtp_disable $2 ;;
-    "-cfg-enable")
-        cmd_parse cfg_enable $2 ;;
-    "-cfg-disable")
-        cmd_parse cfg_enable $2 ;;        
-    "-version")
+    "--cfg-enable")
+        cmdline cfg_enable $2 ;;
+    "--cfg-disable")
+        cmdline cfg_enable $2 ;;
+    "--rootfs-grow")
+        NO_DIALOG=1
+        rootfs_grow ;;
+    "--version")
         echo "$NAME - Version: $VERSION" ;;
-    *)
-        echo "Unknown cmdline argument(s) $@" ;;
     "")
         main ;;
+    *)
+        echo "Unknown cmdline argument(s) $@" ;;
 esac
