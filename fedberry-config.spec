@@ -15,6 +15,7 @@ Source3:    https://raw.githubusercontent.com/%{bname}/%{name}/master/rootfs-gro
 BuildArch:  noarch
 Obsoletes:  rootfs-resize
 Conflicts:  rootfs-resize
+BuildRequires: discount >= 2.1
 Requires(post): systemd
 Requires(preun): systemd
 Requires(postun): systemd
@@ -32,6 +33,9 @@ cp -a %{SOURCE0} %{SOURCE1} %{SOURCE2} %{SOURCE3} .
 
 
 %build
+for MD_FILE in *.md; do
+  markdown -o ${MD_FILE%.*}.html ${MD_FILE}
+done
 
 
 %install
@@ -58,6 +62,7 @@ rm -rf %{buildroot}
 
 %files
 %doc README.md
+%doc README.html
 %license LICENSE
 %attr(0755,root,root) %{_sbindir}/%{name}
 %attr(0644,root,root) %{_unitdir}/rootfs-grow.service
