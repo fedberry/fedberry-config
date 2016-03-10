@@ -770,7 +770,9 @@ requires()
 
 cmdline()
 {
-    #we don't want a dialog or questions
+    CMD_ARG=$2
+    
+    # we don't want a dialog or questions
     NO_DIALOG=1
 
     # check for script run requirements
@@ -780,11 +782,17 @@ cmdline()
     cfg_check
     
     # exclude some special cases for the moment
-    if [[ "$2" == "vc4-kms-v3d" ]] || [[ "$2" == "start_x" ]]; then
-        echo "Enabling/disabling ${REF_NAMES[$2]} via cmdline is currently unsupported"; exit 0
-    else
-        $1 $2
+    if [[ "$CMD_ARG" == "vc4-kms-v3d" ]] || [[ "$CMD_ARG" == "start_x" ]]; then
+        echo "Enabling/disabling ${REF_NAMES[$CMD_ARG]} via cmdline is currently unsupported"
+        exit 0
     fi
+    
+    # weed out '-overlay' in dto names
+    if [[ "$1" == "dto_enable" ]] || [[ "$1" == "dto_disable" ]]; then
+        CMD_ARG=$(echo $CMD_ARG| sed 's/-overlay//')
+    fi
+
+    $1 $CMD_ARG
 }
 
 
