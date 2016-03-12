@@ -2,8 +2,8 @@
 %define name    %{bname}-config
 
 Name:       %{name}
-Version:    0.2
-Release:    2%{?dist}
+Version:    0.2.1
+Release:    1%{?dist}
 License:    GPLv3+
 Summary:    Easy configuration of various system options in FedBerry
 Group:      Applications/System
@@ -69,6 +69,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Sat Mar 12 2016 Vaughan <vaughan at agrez dot net> 0.2.1-1
+- New release
+
 * Sun Mar 06 2016 mrjoshuap <jpreston at redhat dot com> 0.2-2
 - fix URL for package
 - autogenerate html documentation from md files
