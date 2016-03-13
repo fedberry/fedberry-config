@@ -19,6 +19,7 @@ BUG_REPORTS="https://github.com/fedberry/fedberry-config"
 ### Environment variables
 BOOT_DIR=/boot
 CFG_TXT=$BOOT_DIR/config.txt
+CMD_TXT=$BOOT_DIR/cmdline.txt
 DTO_DIR=$BOOT_DIR/overlays
 
 
@@ -613,6 +614,8 @@ menu_rtc()
     #automatically enable it (refer: /boot/overlay/README)
     dto_ask i2c-rtc --no-reboot
     if [[ $BAILED -ne 1 ]] && [[ $DRV_DISABLED -ne 1 ]]; then
+        # ensure nortc is not in cmdline.txt
+        sed -i 's/ nortc//' $CMD_TXT
         while true; do
             SEL=$(whiptail --menu "Choose your I2C Real Time Clock device" \
             --backtitle "$NAME - $VERSION" \
