@@ -775,6 +775,11 @@ cmdline()
 {
     CMD_ARG=$2
     
+    if [[ "$CMD_ARG" == "" ]]; then
+        echo "Missing argument"
+        exit 0
+    fi
+    
     # we don't want a dialog or questions
     NO_DIALOG=1
 
