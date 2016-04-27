@@ -2,7 +2,7 @@
 %define name    %{bname}-config
 
 Name:       %{name}
-Version:    0.2.1
+Version:    0.2.2
 Release:    1%{?dist}
 License:    GPLv3+
 Summary:    Easy configuration of various system options in FedBerry
@@ -16,6 +16,7 @@ BuildArch:  noarch
 Obsoletes:  rootfs-resize
 Conflicts:  rootfs-resize
 BuildRequires: discount >= 2.1
+Requires: pv
 Requires(post): systemd
 Requires(preun): systemd
 Requires(postun): systemd
@@ -69,6 +70,10 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Wed Apr 27 2016 Vaughan <vaughan at agrez dot net> 0.2.2-1
+- New release
+- Requires 'pv'
+
 * Sat Mar 12 2016 Vaughan <vaughan at agrez dot net> 0.2.1-1
 - New release
 
