@@ -65,8 +65,8 @@ rm -rf %{buildroot}
 %doc README.md
 %doc README.html
 %license LICENSE
-%attr(0755,root,root) %{_sbindir}/%{name}
-%attr(0644,root,root) %{_unitdir}/rootfs-grow.service
+%attr(0755,root,root) /%{_sbindir}/%{name}
+%attr(0644,root,root) /%{_unitdir}/rootfs-grow.service
 
 
 %changelog
