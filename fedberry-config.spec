@@ -3,7 +3,7 @@
 
 Name:       %{name}
 Version:    0.2.2
-Release:    1%{?dist}
+Release:    2%{?dist}
 License:    GPLv3+
 Summary:    Easy configuration of various system options in FedBerry
 Group:      Applications/System
@@ -62,6 +62,10 @@ rm -rf %{buildroot}
 %systemd_preun rootfs-grow.service
 
 
+%postun
+%systemd_postun rootfs-grow.service
+
+
 %files
 %doc README.md
 %doc README.html
@@ -71,6 +75,8 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Thu Apr 28 2016 Vaughan <vaughan at agrez dot net> 0.2.2-2
+- Add %%postun macro 
 - Fix build with mock
 
 * Wed Apr 27 2016 Vaughan <vaughan at agrez dot net> 0.2.2-1
