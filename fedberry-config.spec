@@ -16,6 +16,7 @@ BuildArch:  noarch
 Obsoletes:  rootfs-resize
 Conflicts:  rootfs-resize
 BuildRequires: discount >= 2.1
+BuildRequires: systemd
 Requires: pv
 Requires(post): systemd
 Requires(preun): systemd
@@ -65,11 +66,13 @@ rm -rf %{buildroot}
 %doc README.md
 %doc README.html
 %license LICENSE
-%attr(0755,root,root) /%{_sbindir}/%{name}
-%attr(0644,root,root) /%{_unitdir}/rootfs-grow.service
+%attr(0755,root,root) %{_sbindir}/%{name}
+%attr(0644,root,root) %{_unitdir}/rootfs-grow.service
 
 
 %changelog
+- Fix build with mock
+
 * Wed Apr 27 2016 Vaughan <vaughan at agrez dot net> 0.2.2-1
 - New release
 - Requires 'pv'
