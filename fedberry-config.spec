@@ -2,8 +2,8 @@
 %define name    %{bname}-config
 
 Name:       %{name}
-Version:    0.2.1
-Release:    1%{?dist}
+Version:    0.2.2
+Release:    2%{?dist}
 License:    GPLv3+
 Summary:    Easy configuration of various system options in FedBerry
 Group:      Applications/System
@@ -16,6 +16,8 @@ BuildArch:  noarch
 Obsoletes:  rootfs-resize
 Conflicts:  rootfs-resize
 BuildRequires: discount >= 2.1
+BuildRequires: systemd
+Requires: pv
 Requires(post): systemd
 Requires(preun): systemd
 Requires(postun): systemd
@@ -60,6 +62,10 @@ rm -rf %{buildroot}
 %systemd_preun rootfs-grow.service
 
 
+%postun
+%systemd_postun rootfs-grow.service
+
+
 %files
 %doc README.md
 %doc README.html
@@ -69,6 +75,14 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Thu Apr 28 2016 Vaughan <vaughan at agrez dot net> 0.2.2-2
+- Add %%postun macro 
+- Fix build with mock
+
+* Wed Apr 27 2016 Vaughan <vaughan at agrez dot net> 0.2.2-1
+- New release
+- Requires 'pv'
+
 * Sat Mar 12 2016 Vaughan <vaughan at agrez dot net> 0.2.1-1
 - New release
 
