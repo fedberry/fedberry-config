@@ -107,19 +107,18 @@ ask_reboot()
 
 dialog_menu()
 {
-    TITLE=$1
-    local -n ITEMS
-    ITEMS=$2
-    local -n ACTIONS
-    ACTIONS=$3
-    DLG_CMD=(whiptail --title "$TITLE" --menu "Select options:" --backtitle "$NAME - $VERSION" --ok-button Select $DLG_H $DLG_W $DLG_MH)
-   
     while true; do
-        MENU=$("${DLG_CMD[@]}" "${ITEMS[@]}" 3>&1 1>&2 2>&3)
+        TITLE=$1
+        local -n ITEMS=$2
+        local -n ACTIONS=$3
+        
+        DLG_CMD=(whiptail --title "$TITLE" --menu "Select options:" --backtitle "$NAME - $VERSION" --ok-button Select $DLG_H $DLG_W $DLG_MH)
+        
+        SEL=$("${DLG_CMD[@]}" "${ITEMS[@]}" 3>&1 1>&2 2>&3)
         RETVAL=$?
     
         case $RETVAL in
-            0) eval ${ACTIONS[$MENU]} ;;
+            0) eval ${ACTIONS[$SEL]} ;;
             1) break ;;
             255) echo "Esc Pressed" ;;
         esac
