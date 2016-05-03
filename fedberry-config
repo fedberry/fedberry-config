@@ -489,40 +489,22 @@ cfg_val_update()
 }
 
 
-
-select_kernel()
+boot_kernel()
 {
-    #current running kernel
-    CUR_KERN=$(uname -r |sed 's/.fc23.armv7hl//')
-    
-    #list installed kernels (read into an array)
-    pushd $BOOT_DIR &>/dev/null
-    read -ra KERNEL_LIST <<<$(ls vmlinuz* |sed -e 's/vmlinuz-//' -e 's/.fc23.armv7hl//' \
-    |awk '!/^ / && NF {print $1; print $1}')
-    popd &>/dev/null
-    
-    #make the selection
-    SEL=$(whiptail --menu "Select the kernel version for next boot:" \
-    --title "Current running kernel version: $CUR_KERN" --notags \
-    $DLG_H $DLG_W $DLG_MH "${KERNEL_LIST[@]}" 3>&1 1>&2 2>&3)
-    
-    #kernel has been selected
-    if [ $? -eq 0 ]; then
-        VMLINUZ=$(echo vmlinuz-$SEL.fc23.armv7hl)
-        DTB_DIR=$(echo dtb-$SEL.fc23.armv7hl)
-        
-        #copy over desired kernel
-        cp -f $BOOT_DIR/$VMLINUZ $BOOT_DIR/kernel7.img &>/dev/null
-        
-        #clean overlay dir then copy required dtb files
-        rm -f $BOOT_DIR/overlays/* &>/dev/null
-        cp $BOOT_DIR/$DTB_DIR/overlays/* $BOOT_DIR/overlays/ &>/dev/null
-        cp -f $BOOT_DIR/$DTB_DIR/*.dtb $BOOT_DIR/ &>/dev/null
-        SGST_REBOOT=1
-        
-        #offer a reboot
-        ask_reboot "$SEL will be used for the next boot"
-     fi
+    VMLINUZ=$(echo vmlinuz-$1.fc23.armv7hl)
+    DTB_DIR=$(echo dtb-$1.fc23.armv7hl)
+
+    #copy over desired kernel
+    cp -f $BOOT_DIR/$VMLINUZ $BOOT_DIR/kernel7.img &>/dev/null
+
+    #clean overlay dir then copy required dtb files
+    rm -f $BOOT_DIR/overlays/* &>/dev/null
+    cp $BOOT_DIR/$DTB_DIR/overlays/* $BOOT_DIR/overlays/ &>/dev/null
+    cp -f $BOOT_DIR/$DTB_DIR/*.dtb $BOOT_DIR/ &>/dev/null
+    SGST_REBOOT=1
+
+    #offer a reboot
+    ask_reboot "$1 will be used for the next boot"
 }
 
 
@@ -686,6 +668,30 @@ rootfs_grow()
 }
 
 
+menu_kernel()
+{
+    #current running kernel
+    CUR_KERN=$(uname -r |sed 's/.fc23.armv7hl//')
+    
+    local MENU_TITLE="Current running kernel version: $CUR_KERN"
+        
+    #list installed kernels (read into an array)
+    read -ra KERNEL_LIST <<<$(ls $BOOT_DIR/vmlinuz* |sed -e 's|/boot/vmlinuz-||' -e 's|.fc23.armv7hl||')
+
+    local MENU_ITEMS=(
+    "1. Kernel Version:" "${KERNEL_LIST[0]}"
+    "2. Kernel Version:" "${KERNEL_LIST[1]}"
+    "3. Kernel Version:" "${KERNEL_LIST[2]}")
+    
+    declare -A MENU_ACTIONS=(
+    [${MENU_ITEMS[0]}]="boot_kernel ${KERNEL_LIST[0]} ; break"
+    [${MENU_ITEMS[2]}]="boot_kernel ${KERNEL_LIST[1]} ; break"
+    [${MENU_ITEMS[4]}]="boot_kernel ${KERNEL_LIST[2]} ; break")
+    
+    dialog_menu "$MENU_TITLE" MENU_ITEMS MENU_ACTIONS
+}
+
+
 menu_swap()
 {
     local MENU_TITLE="Choose the swap file size"
@@ -795,7 +801,7 @@ menu_main()
     "6. About $NAME" "Information about this configuration tool")
     
     declare -A MENU_ACTIONS=(
-    [${MENU_ITEMS[0]}]=select_kernel
+    [${MENU_ITEMS[0]}]=menu_kernel
     [${MENU_ITEMS[2]}]=menu_params
     [${MENU_ITEMS[4]}]=menu_drivers
     [${MENU_ITEMS[6]}]=rootfs_ask
