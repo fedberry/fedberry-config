@@ -105,6 +105,28 @@ ask_reboot()
 }
 
 
+dialog_menu()
+{
+    TITLE=$1
+    local -n ITEMS
+    ITEMS=$2
+    local -n ACTIONS
+    ACTIONS=$3
+    DLG_CMD=(whiptail --title "$TITLE" --menu "Select options:" --backtitle "$NAME - $VERSION" --ok-button Select $DLG_H $DLG_W $DLG_MH)
+   
+    while true; do
+        MENU=$("${DLG_CMD[@]}" "${ITEMS[@]}" 3>&1 1>&2 2>&3)
+        RETVAL=$?
+    
+        case $RETVAL in
+            0) eval ${ACTIONS[$MENU]} ;;
+            1) break ;;
+            255) echo "Esc Pressed" ;;
+        esac
+    done
+}
+
+
 dialog_size()
 {
     DLG_H=17
@@ -666,158 +688,121 @@ rootfs_grow()
 
 menu_swap()
 {
-    while true; do
-        SEL=$(whiptail --menu "Choose the swap file size" \
-        --backtitle "$NAME - $VERSION" \
-        --title "Swap File Selection Menu" $DLG_H $DLG_W $DLG_MH \
-        --ok-button Select \
-        "1. 256 MB " "Create and enable a 256MB swap file" \
-        "2. 512 MB " "Create and enable a 512MB swap file" \
-        "3. 1024 MB  " "Create and enable a 1024MB (1GB) swap file" \
-        3>&1 1>&2 2>&3)
-        RET=$?
-        if [ $RET == 1 ]; then
-            break
-        elif [ $RET == 0 ]; then
-            case "$SEL" in
-                1.*) swap_add 256; break ;;
-                2.*) swap_add 512; break ;;
-                3.*) swap_add 1024;break ;;
-                *) msg_box "Error: unrecognized option" ;;
-            esac || msg_box "There was an error running option $SEL"
-        fi
-    done
+    local MENU_TITLE="Choose the swap file size"
+    
+    local MENU_ITEMS=(
+    "1. 256 MB " "Create and enable a 256MB swap file"
+    "2. 512 MB " "Create and enable a 512MB swap file"
+    "3. 1024 MB  " "Create and enable a 1024MB (1GB) swap file")
+    
+    declare -A MENU_ACTIONS=(
+    [${MENU_ITEMS[0]}]="swap_add 256 ; break"
+    [${MENU_ITEMS[2]}]="swap_add 512 ; break"
+    [${MENU_ITEMS[4]}]="swap_add 1024 ; break")
+    
+    dialog_menu "$MENU_TITLE" MENU_ITEMS MENU_ACTIONS
 }
 
 
 menu_rtc()
-{   
+{
     #We don't have to enable i2c interface first here as the DTO should
     #automatically enable it (refer: /boot/overlay/README)
     dto_ask i2c-rtc --no-reboot
-    if [[ $BAILED -ne 1 ]] && [[ $DRV_DISABLED -ne 1 ]]; then
-        # ensure nortc is not in cmdline.txt
-        sed -i 's/ nortc//' $CMD_TXT
-        while true; do
-            SEL=$(whiptail --menu "Choose your I2C Real Time Clock device" \
-            --backtitle "$NAME - $VERSION" \
-            --title "RTC Device Selection Menu" $DLG_H $DLG_W $DLG_MH \
-            --ok-button Select \
-            "1. DS1307 " "Select the DS1307 device" \
-            "2. DS3231  " "Select the DS3231 device" \
-            "3. MCP7941x " "Select the MCP7941x device" \
-            "4. PCF2127 " "Select the PCF2127 device" \
-            "5. PCF8523 " "Select the PCF8523 device" \
-            "6. PCF8563 " "Select the PCF8563 device" \
-            3>&1 1>&2 2>&3)
-            RET=$?
-            if [ $RET == 1 ]; then
-                break
-            elif [ $RET == 0 ]; then
-                case "$SEL" in
-                    1.*) dto_prm_update i2c-rtc ds1307; break ;;
-                    2.*) dto_prm_update i2c-rtc ds3231; break ;;
-                    3.*) dto_prm_update i2c-rtc mcp7941x; break ;;
-                    4.*) dto_prm_update i2c-rtc pcf2127; break;;
-                    5.*) dto_prm_update i2c-rtc pcf8523; break ;;
-                    6.*) dto_prm_update i2c-rtc pcf8563; break ;;
-                    *) msg_box "Error: unrecognized option" ;;
-                esac || msg_box "There was an error running option $SEL"
-            fi
-        done            
-    fi
+    
+    #check we haven't bailed or disabled the driver
+    [ $BAILED -eq 1 -o $DRV_DISABLED -eq 1 ] && break
+        
+    #ensure nortc is not in cmdline.txt
+    sed -i 's/ nortc//' $CMD_TXT
+    
+    local MENU_TITLE="RTC Device Selection Menu"
+    
+    local MENU_ITEMS=(
+    "1. DS1307 " "Select the DS1307 device"
+    "2. DS3231  " "Select the DS3231 device"
+    "3. MCP7941x " "Select the MCP7941x device"
+    "4. PCF2127 " "Select the PCF2127 device"
+    "5. PCF8523 " "Select the PCF8523 device"
+    "6. PCF8563 " "Select the PCF8563 device")
+    
+    declare -A MENU_ACTIONS=(
+    [${MENU_ITEMS[0]}]="dto_prm_update i2c-rtc ds1307 ; break"
+    [${MENU_ITEMS[2]}]="dto_prm_update i2c-rtc ds3231 ; break"
+    [${MENU_ITEMS[4]}]="dto_prm_update i2c-rtc mcp7941x ; break"
+    [${MENU_ITEMS[6]}]="dto_prm_update i2c-rtc pcf2127 ; break"
+    [${MENU_ITEMS[8]}]="dto_prm_update i2c-rtc pcf8523 ; break"
+    [${MENU_ITEMS[10]}]="dto_prm_update i2c-rtc pcf8563 ; break")
+    
+    dialog_menu "$MENU_TITLE" MENU_ITEMS MENU_ACTIONS
+    
     ask_reboot
 }
 
 
 menu_drivers()
 {
-    while true; do
-        SEL=$(whiptail --menu "Choose a driver to enable or disable" \
-        --backtitle "$NAME - $VERSION" \
-        --title "Driver Selection Menu" $DLG_H $DLG_W $DLG_MH \
-        --cancel-button "Main Menu" --ok-button Select \
-        "1. Mesa DRM VC4 " "Mesa/DRM VC4 driver for Rpi (Experimental)" \
-        "2. Pi Camera  " "Enable or disable the RPi Camera" \
-        "3. LIRC RPi " "Linux Infrared Remote Control for the RPi (LIRC)" \
-        "4. I2C RTC " "Realtime Cock (RTC) support" \
-        "5. BCM2835 MMC " "bcm2835-mmc SD/MMC driver" \
-        3>&1 1>&2 2>&3)
-        RET=$?
-        if [ $RET == 1 ]; then
-            break
-        elif [ $RET == 0 ]; then
-            case "$SEL" in
-                1.*) mesa_vc4 ;;
-                2.*) pi_camera ;;
-                3.*) dto_ask lirc-rpi ;;
-                4.*) menu_rtc ;;
-                5.*) dto_ask mmc ;;
-                *) msg_box "Error: unrecognized option" ;;
-            esac || msg_box "There was an error running option $SEL"
-        fi
-    done 
+    local MENU_TITLE="Choose a driver to enable or disable"
+    
+    local MENU_ITEMS=(
+    "1. Mesa DRM VC4" "Mesa/DRM VC4 driver for Rpi (Experimental)"
+    "2. Pi Camera" "Enable or disable the RPi Camera"
+    "3. LIRC RPi" "Linux Infrared Remote Control for the RPi (LIRC)"
+    "4. I2C RTC" "Realtime Cock (RTC) support"
+    "5. BCM2835 MMC" "bcm2835-mmc SD/MMC driver")
+    
+    declare -A MENU_ACTIONS=(
+    [${MENU_ITEMS[0]}]=mesa_vc4
+    [${MENU_ITEMS[2]}]=pi_camera
+    [${MENU_ITEMS[4]}]="dto_ask lirc-rpi"
+    [${MENU_ITEMS[6]}]=menu_rtc
+    [${MENU_ITEMS[8]}]="dto_ask mmc")
+    
+    dialog_menu "$MENU_TITLE" MENU_ITEMS MENU_ACTIONS
 }
 
 
 menu_params()
 {
-       while true; do
-        SEL=$(whiptail --menu "Choose a parameter to enable or disable" \
-        --backtitle "$NAME - $VERSION" \
-        --title "Option Selection Menu" $DLG_H $DLG_W $DLG_MH \
-        --cancel-button "Main Menu" --ok-button Select \
-        "1. I2C interface " "Inter-Integrated Circuit (i2c) interface" \
-        "2. I2S interface  " "Inter-IC Sound, (i2s) interface" \
-        "3. SPI interface " "Serial Peripheral Interface" \
-        "4. Audio " "On-board ALSA audio interface" \
-        3>&1 1>&2 2>&3)
-        RET=$?
-        if [ $RET == 1 ]; then
-            break
-        elif [ $RET == 0 ]; then
-            case "$SEL" in
-                1.*) dtp_ask i2c ;;
-                2.*) dtp_ask i2s ;;
-                3.*) dtp_ask spi ;;
-                4.*) dtp_ask audio ;;
-                *) msg_box "Error: unrecognized option" ;;
-            esac || msg_box "There was an error running option $SEL"
-        fi
-    done 
+    local MENU_TITLE="Choose a parameter to enable or disable"
+    
+    local MENU_ITEMS=(
+    "1. I2C interface" "Inter-Integrated Circuit (i2c) interface"
+    "2. I2S interface" "Inter-IC Sound, (i2s) interface"
+    "3. SPI interface" "Serial Peripheral Interface"
+    "4. Audio" "On-board ALSA audio interface")
+    
+    declare -A MENU_ACTIONS=(
+    [${MENU_ITEMS[0]}]="dtp_ask i2c"
+    [${MENU_ITEMS[2]}]="dtp_ask i2s"
+    [${MENU_ITEMS[4]}]="dtp_ask spi"
+    [${MENU_ITEMS[6]}]="dtp_ask audio")
+    
+    dialog_menu "$MENU_TITLE" MENU_ITEMS MENU_ACTIONS
 }
 
 
 menu_main()
 {
-    while true; do
-        SEL=$(whiptail --menu "Choose an Option" --backtitle "$NAME - $VERSION" \
-        --title "System Configuration" $DLG_H $DLG_W $DLG_MH \
-        --cancel-button Exit --ok-button Select \
-        "1. Set Boot Kernel  " "Select which kernel you want to use at boot" \
-        "2. DT Paramters  " "Enable or disable Device Tree (DT) parameters" \
-        "3. Hardware Support  " "Enable or disable hardware support / drivers" \
-        "4. Expand Root FS  " "Expand (grow) root filesystem on SD card" \
-        "5. Add Swap File  " "Add and enable a swap file" \
-        "6. About $NAME  " "Information about this configuration tool" \
-        3>&1 1>&2 2>&3)
-        RET=$?
-        if [ $RET == 1 ]; then
-            break
-        elif [ $RET == 0 ]; then
-            case "$SEL" in
-                1.*) select_kernel ;;
-                2.*) menu_params ;;                
-                3.*) menu_drivers ;;
-                4.*) rootfs_ask ;;
-                5.*) menu_swap ;;
-                6.*) about ;;
-                *) msg_box "Error: unrecognized option" ;;
-            esac || msg_box "There was an error running option $SEL"
-        else
-            exit 1
-        fi
-    done
+    local MENU_TITLE="System Configuration"
+    
+    local MENU_ITEMS=(
+    "1. Set Boot Kernel" "Select which kernel you want to use at boot"
+    "2. DT Paramters" "Enable or disable Device Tree (DT) parameters"
+    "3. Hardware Support" "Enable or disable hardware support / drivers"
+    "4. Expand Root FS" "Expand (grow) root filesystem on SD card"
+    "5. Add Swap File" "Add and enable a swap file"
+    "6. About $NAME" "Information about this configuration tool")
+    
+    declare -A MENU_ACTIONS=(
+    [${MENU_ITEMS[0]}]=select_kernel
+    [${MENU_ITEMS[2]}]=menu_params
+    [${MENU_ITEMS[4]}]=menu_drivers
+    [${MENU_ITEMS[6]}]=rootfs_ask
+    [${MENU_ITEMS[8]}]=menu_swap
+    [${MENU_ITEMS[10]}]=about)
+    
+    dialog_menu "$MENU_TITLE" MENU_ITEMS MENU_ACTIONS
     
     #clear screen & exit
     clear; exit 0
