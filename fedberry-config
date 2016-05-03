@@ -108,11 +108,11 @@ ask_reboot()
 dialog_menu()
 {
     while true; do
-        TITLE=$1
+        local -n TITLE=$1
         local -n ITEMS=$2
         local -n ACTIONS=$3
         
-        DLG_CMD=(whiptail --title "$TITLE" --menu "Select options:" --backtitle "$NAME - $VERSION" --ok-button Select $DLG_H $DLG_W $DLG_MH)
+        DLG_CMD=(whiptail --title "${TITLE[0]}" --menu "${TITLE[1]}" --backtitle "$NAME - $VERSION" --ok-button Select $DLG_H $DLG_W $DLG_MH)
         
         SEL=$("${DLG_CMD[@]}" "${ITEMS[@]}" 3>&1 1>&2 2>&3)
         RETVAL=$?
@@ -672,7 +672,8 @@ menu_kernel()
     #current running kernel
     CUR_KERN=$(uname -r |sed 's/.fc23.armv7hl//')
     
-    local MENU_TITLE="Current running kernel version: $CUR_KERN"
+    local MENU_TITLES=(
+    "Current running kernel version: $CUR_KERN" "Select the kernel version for next boot:")
         
     #list installed kernels (read into an array)
     read -ra KERNEL_LIST <<<$(ls $BOOT_DIR/vmlinuz* |sed -e 's|/boot/vmlinuz-||' -e 's|.fc23.armv7hl||')
@@ -687,13 +688,14 @@ menu_kernel()
     [${MENU_ITEMS[2]}]="boot_kernel ${KERNEL_LIST[1]} ; break"
     [${MENU_ITEMS[4]}]="boot_kernel ${KERNEL_LIST[2]} ; break")
     
-    dialog_menu "$MENU_TITLE" MENU_ITEMS MENU_ACTIONS
+    dialog_menu MENU_TITLES MENU_ITEMS MENU_ACTIONS
 }
 
 
 menu_swap()
 {
-    local MENU_TITLE="Choose the swap file size"
+    local MENU_TITLES=(
+    "Swap File Selection" "Choose required swap file size")
     
     local MENU_ITEMS=(
     "1. 256 MB " "Create and enable a 256MB swap file"
@@ -705,7 +707,7 @@ menu_swap()
     [${MENU_ITEMS[2]}]="swap_add 512 ; break"
     [${MENU_ITEMS[4]}]="swap_add 1024 ; break")
     
-    dialog_menu "$MENU_TITLE" MENU_ITEMS MENU_ACTIONS
+    dialog_menu MENU_TITLES MENU_ITEMS MENU_ACTIONS
 }
 
 
@@ -721,7 +723,8 @@ menu_rtc()
     #ensure nortc is not in cmdline.txt
     sed -i 's/ nortc//' $CMD_TXT
     
-    local MENU_TITLE="RTC Device Selection Menu"
+    local MENU_TITLES=(
+    "RTC Device Selection" "Choose your I2C Real Time Clock device")
     
     local MENU_ITEMS=(
     "1. DS1307 " "Select the DS1307 device"
@@ -739,7 +742,7 @@ menu_rtc()
     [${MENU_ITEMS[8]}]="dto_prm_update i2c-rtc pcf8523 ; break"
     [${MENU_ITEMS[10]}]="dto_prm_update i2c-rtc pcf8563 ; break")
     
-    dialog_menu "$MENU_TITLE" MENU_ITEMS MENU_ACTIONS
+    dialog_menu MENU_TITLES MENU_ITEMS MENU_ACTIONS
     
     ask_reboot
 }
@@ -747,7 +750,8 @@ menu_rtc()
 
 menu_drivers()
 {
-    local MENU_TITLE="Choose a driver to enable or disable"
+    local MENU_TITLES=(
+    "Enable or Disable System Drivers" "Choose an Option")
     
     local MENU_ITEMS=(
     "1. Mesa DRM VC4" "Mesa/DRM VC4 driver for Rpi (Experimental)"
@@ -763,13 +767,15 @@ menu_drivers()
     [${MENU_ITEMS[6]}]=menu_rtc
     [${MENU_ITEMS[8]}]="dto_ask mmc")
     
-    dialog_menu "$MENU_TITLE" MENU_ITEMS MENU_ACTIONS
+    dialog_menu MENU_TITLES MENU_ITEMS MENU_ACTIONS
 }
 
 
 menu_params()
 {
-    local MENU_TITLE="Choose a parameter to enable or disable"
+    local MENU_TITLES=(
+    "Enable or Disable Device Tree Paramters" "Choose an Option")
+    
     
     local MENU_ITEMS=(
     "1. I2C interface" "Inter-Integrated Circuit (i2c) interface"
@@ -783,13 +789,13 @@ menu_params()
     [${MENU_ITEMS[4]}]="dtp_ask spi"
     [${MENU_ITEMS[6]}]="dtp_ask audio")
     
-    dialog_menu "$MENU_TITLE" MENU_ITEMS MENU_ACTIONS
+    dialog_menu MENU_TITLES MENU_ITEMS MENU_ACTIONS
 }
 
 
 menu_main()
 {
-    local MENU_TITLE="System Configuration"
+    local MENU_TITLES=("System Configuration" "Choose an Option")
     
     local MENU_ITEMS=(
     "1. Set Boot Kernel" "Select which kernel you want to use at boot"
@@ -797,7 +803,7 @@ menu_main()
     "3. Hardware Support" "Enable or disable hardware support / drivers"
     "4. Expand Root FS" "Expand (grow) root filesystem on SD card"
     "5. Add Swap File" "Add and enable a swap file"
-    "6. About $NAME" "Information about this configuration tool")
+    "6. About $NAME" "Information about this configuration utility")
     
     declare -A MENU_ACTIONS=(
     [${MENU_ITEMS[0]}]=menu_kernel
@@ -807,7 +813,7 @@ menu_main()
     [${MENU_ITEMS[8]}]=menu_swap
     [${MENU_ITEMS[10]}]=about)
     
-    dialog_menu "$MENU_TITLE" MENU_ITEMS MENU_ACTIONS
+    dialog_menu MENU_TITLES MENU_ITEMS MENU_ACTIONS
     
     #clear screen & exit
     clear; exit 0
