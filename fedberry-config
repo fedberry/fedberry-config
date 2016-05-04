@@ -25,10 +25,10 @@ DTO_DIR=$BOOT_DIR/overlays
 FSTAB=$ETC_DIR/fstab
 
 
-### Misc standard messages
+### Misc standard messages / args
 TXT_ENB="is currently ENABLED in $CFG_TXT\n\nDo you want to DISABLE it?"
 TXT_DIS="is currently DISABLED in $CFG_TXT\n\nDo you want to ENABLE it?"
-
+MENU_ARGS="MENU_TITLES MENU_BUTTONS MENU_ITEMS MENU_ACTIONS"
 
 ### Default DTP & config opt values 
 declare -A DEF_VALS=(
@@ -109,10 +109,11 @@ dialog_menu()
 {
     while true; do
         local -n TITLE=$1
-        local -n ITEMS=$2
-        local -n ACTIONS=$3
+        local -n BUTTONS=$2
+        local -n ITEMS=$3
+        local -n ACTIONS=$4
         
-        DLG_CMD=(whiptail --title "${TITLE[0]}" --menu "${TITLE[1]}" --backtitle "$NAME - $VERSION" --ok-button Select $DLG_H $DLG_W $DLG_MH)
+        DLG_CMD=(whiptail --title "${TITLE[0]}" --menu "${TITLE[1]}" --backtitle "$NAME - $VERSION" --ok-button "${BUTTONS[0]}" --cancel-button "${BUTTONS[1]}" $DLG_H $DLG_W $DLG_MH)
         
         SEL=$("${DLG_CMD[@]}" "${ITEMS[@]}" 3>&1 1>&2 2>&3)
         RETVAL=$?
@@ -674,7 +675,9 @@ menu_kernel()
     
     local MENU_TITLES=(
     "Current running kernel version: $CUR_KERN" "Select the kernel version for next boot:")
-        
+
+    local MENU_BUTTONS=("Select" "Cancel")
+    
     #list installed kernels (read into an array)
     read -ra KERNEL_LIST <<<$(ls $BOOT_DIR/vmlinuz* |sed -e 's|/boot/vmlinuz-||' -e 's|.fc23.armv7hl||')
 
@@ -688,7 +691,7 @@ menu_kernel()
     [${MENU_ITEMS[2]}]="boot_kernel ${KERNEL_LIST[1]} ; break"
     [${MENU_ITEMS[4]}]="boot_kernel ${KERNEL_LIST[2]} ; break")
     
-    dialog_menu MENU_TITLES MENU_ITEMS MENU_ACTIONS
+    dialog_menu $MENU_ARGS
 }
 
 
@@ -696,6 +699,8 @@ menu_swap()
 {
     local MENU_TITLES=(
     "Swap File Selection" "Choose required swap file size")
+    
+    local MENU_BUTTONS=("Select" "Cancel")
     
     local MENU_ITEMS=(
     "1. 256 MB " "Create and enable a 256MB swap file"
@@ -707,7 +712,7 @@ menu_swap()
     [${MENU_ITEMS[2]}]="swap_add 512 ; break"
     [${MENU_ITEMS[4]}]="swap_add 1024 ; break")
     
-    dialog_menu MENU_TITLES MENU_ITEMS MENU_ACTIONS
+    dialog_menu $MENU_ARGS
 }
 
 
@@ -725,6 +730,8 @@ menu_rtc()
     
     local MENU_TITLES=(
     "RTC Device Selection" "Choose your I2C Real Time Clock device")
+
+    local MENU_BUTTONS=("Select" "Cancel")
     
     local MENU_ITEMS=(
     "1. DS1307 " "Select the DS1307 device"
@@ -742,7 +749,7 @@ menu_rtc()
     [${MENU_ITEMS[8]}]="dto_prm_update i2c-rtc pcf8523 ; break"
     [${MENU_ITEMS[10]}]="dto_prm_update i2c-rtc pcf8563 ; break")
     
-    dialog_menu MENU_TITLES MENU_ITEMS MENU_ACTIONS
+    dialog_menu $MENU_ARGS
     
     ask_reboot
 }
@@ -752,6 +759,8 @@ menu_drivers()
 {
     local MENU_TITLES=(
     "Enable or Disable System Drivers" "Choose an Option")
+    
+    local MENU_BUTTONS=("Select" "Main Menu")
     
     local MENU_ITEMS=(
     "1. Mesa DRM VC4" "Mesa/DRM VC4 driver for Rpi (Experimental)"
@@ -767,7 +776,7 @@ menu_drivers()
     [${MENU_ITEMS[6]}]=menu_rtc
     [${MENU_ITEMS[8]}]="dto_ask mmc")
     
-    dialog_menu MENU_TITLES MENU_ITEMS MENU_ACTIONS
+    dialog_menu $MENU_ARGS
 }
 
 
@@ -776,6 +785,7 @@ menu_params()
     local MENU_TITLES=(
     "Enable or Disable Device Tree Paramters" "Choose an Option")
     
+    local MENU_BUTTONS=("Select" "Main Menu")
     
     local MENU_ITEMS=(
     "1. I2C interface" "Inter-Integrated Circuit (i2c) interface"
@@ -789,13 +799,15 @@ menu_params()
     [${MENU_ITEMS[4]}]="dtp_ask spi"
     [${MENU_ITEMS[6]}]="dtp_ask audio")
     
-    dialog_menu MENU_TITLES MENU_ITEMS MENU_ACTIONS
+    dialog_menu $MENU_ARGS
 }
 
 
 menu_main()
 {
     local MENU_TITLES=("System Configuration" "Choose an Option")
+    
+    local MENU_BUTTONS=("Select" "Exit")
     
     local MENU_ITEMS=(
     "1. Set Boot Kernel" "Select which kernel you want to use at boot"
@@ -813,7 +825,7 @@ menu_main()
     [${MENU_ITEMS[8]}]=menu_swap
     [${MENU_ITEMS[10]}]=about)
     
-    dialog_menu MENU_TITLES MENU_ITEMS MENU_ACTIONS
+    dialog_menu $MENU_ARGS
     
     #clear screen & exit
     clear; exit 0
