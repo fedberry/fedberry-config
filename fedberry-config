@@ -127,6 +127,12 @@ dialog_menu()
 }
 
 
+dialog_prog()
+{
+    whiptail --gauge "$SWAP_MSG" 10 70 0
+}
+
+
 dialog_size()
 {
     DLG_H=17
@@ -579,7 +585,7 @@ swap_add()
         pv -p --size "$1"M /dev/zero | dd of=/swapfile bs=1k count="$1"k status=noxfer
         mkswap /swapfile
     else
-        (pv -n --size "$1"M /dev/zero | dd of=/swapfile bs=1k count="$1"k status=noxfer && mkswap /swapfile) 2>&1 | whiptail --gauge "$SWAP_MSG" 10 70 0
+        (pv -n --size "$1"M /dev/zero | dd of=/swapfile bs=1k count="$1"k status=noxfer && mkswap /swapfile) 2>&1 | dialog_prog
     fi
     
     #could we use fallocate here as its much faster? or will we end up with a sparse file?
