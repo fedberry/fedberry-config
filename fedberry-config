@@ -33,7 +33,6 @@ MENU_ARGS="MENU_TITLES MENU_BUTTONS MENU_ITEMS MENU_ACTIONS"
 ### Default DTP & config opt values 
 declare -A DEF_VALS=(
     [gpu_mem]=32
-    [avoid_warnings]=2
     [start_x]=0
     [i2c]=on
     [i2s]=on
@@ -521,10 +520,8 @@ mesa_vc4()
     if [[ $BAILED -ne 1 ]] && [[ $NO_OVERLAY -ne 1 ]]; then
         if [[ $DRV_DISABLED -eq 1 ]]; then
             cfg_enable gpu_mem
-            cfg_disable avoid_warnings
         else
             cfg_disable gpu_mem
-            cfg_enable avoid_warnings
             #currently conflicts with pi camera requirements
             cfg_disable start_x
         fi
