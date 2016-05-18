@@ -685,15 +685,13 @@ menu_kernel()
     read -ra KERNEL_LIST <<<$(ls $BOOT_DIR/vmlinuz* |sed -e 's|/boot/vmlinuz-||' -e 's|.fc23.armv7hl||')
 
     local MENU_ITEMS
+    declare -A MENU_ACTIONS
+    
     for i in `seq 1 ${#KERNEL_LIST[@]}`; do
         MENU_ITEMS=("${MENU_ITEMS[@]}" "$i. Kernel Version" "${KERNEL_LIST[$(($i-1))]}")
-    done
-    
-    declare -A MENU_ACTIONS
-    for i in `seq 1 ${#KERNEL_LIST[@]}`; do
         MENU_ACTIONS["$i. Kernel Version"]="boot_kernel ${KERNEL_LIST[$(($i-1))]} ; break"
     done
-        
+            
     dialog_menu $MENU_ARGS
 }
 
