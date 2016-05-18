@@ -681,19 +681,19 @@ menu_kernel()
 
     local MENU_BUTTONS=("Select" "Cancel")
     
-    #list installed kernels (read into an array)
+    #list installed kernels
     read -ra KERNEL_LIST <<<$(ls $BOOT_DIR/vmlinuz* |sed -e 's|/boot/vmlinuz-||' -e 's|.fc23.armv7hl||')
 
-    local MENU_ITEMS=(
-    "1. Kernel Version:" "${KERNEL_LIST[0]}"
-    "2. Kernel Version:" "${KERNEL_LIST[1]}"
-    "3. Kernel Version:" "${KERNEL_LIST[2]}")
+    local MENU_ITEMS
+    for i in `seq 1 ${#KERNEL_LIST[@]}`; do
+        MENU_ITEMS=("${MENU_ITEMS[@]}" "$i. Kernel Version" "${KERNEL_LIST[$(($i-1))]}")
+    done
     
-    declare -A MENU_ACTIONS=(
-    [${MENU_ITEMS[0]}]="boot_kernel ${KERNEL_LIST[0]} ; break"
-    [${MENU_ITEMS[2]}]="boot_kernel ${KERNEL_LIST[1]} ; break"
-    [${MENU_ITEMS[4]}]="boot_kernel ${KERNEL_LIST[2]} ; break")
-    
+    declare -A MENU_ACTIONS
+    for i in `seq 1 ${#KERNEL_LIST[@]}`; do
+        MENU_ACTIONS["$i. Kernel Version"]="boot_kernel ${KERNEL_LIST[$(($i-1))]} ; break"
+    done
+        
     dialog_menu $MENU_ARGS
 }
 
