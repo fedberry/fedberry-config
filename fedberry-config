@@ -12,7 +12,7 @@
 NAME=fedberry-config
 AUTHORS="Vaughan Agrez"
 YEAR=2016
-VERSION=0.2.2
+VERSION=0.3.1
 BUG_REPORTS="https://github.com/fedberry/fedberry-config"
 
 
@@ -25,15 +25,14 @@ DTO_DIR=$BOOT_DIR/overlays
 FSTAB=$ETC_DIR/fstab
 
 
-### Misc standard messages
+### Misc standard messages / args
 TXT_ENB="is currently ENABLED in $CFG_TXT\n\nDo you want to DISABLE it?"
 TXT_DIS="is currently DISABLED in $CFG_TXT\n\nDo you want to ENABLE it?"
-
+MENU_ARGS="MENU_TITLES MENU_BUTTONS MENU_ITEMS MENU_ACTIONS"
 
 ### Default DTP & config opt values 
 declare -A DEF_VALS=(
     [gpu_mem]=32
-    [avoid_warnings]=2
     [start_x]=0
     [i2c]=on
     [i2s]=on
@@ -44,7 +43,6 @@ declare -A DEF_VALS=(
 ### Name references for various DTOs, DTPs & config options 
 declare -A REF_NAMES=(
     [start_x]="RPi Camera"
-    [mmc]="BCM2835 MMC"
     [vc4-kms-v3d]="VC4 Mesa" 
     [lirc-rpi]="RPi LIRC"
     [i2c-rtc]="I2C RTC"
@@ -102,6 +100,34 @@ ask_reboot()
             SGST_REBOOT=0
         fi
     fi
+}
+
+
+dialog_menu()
+{
+    while true; do
+        local -n TITLE=$1
+        local -n BUTTONS=$2
+        local -n ITEMS=$3
+        local -n ACTIONS=$4
+        
+        DLG_CMD=(whiptail --title "${TITLE[0]}" --menu "${TITLE[1]}" --backtitle "$NAME - $VERSION" --ok-button "${BUTTONS[0]}" --cancel-button "${BUTTONS[1]}" $DLG_H $DLG_W $DLG_MH)
+        
+        SEL=$("${DLG_CMD[@]}" "${ITEMS[@]}" 3>&1 1>&2 2>&3)
+        RETVAL=$?
+    
+        case $RETVAL in
+            0) eval ${ACTIONS[$SEL]} ;;
+            1) break ;;
+            255) echo "Esc Pressed" ;;
+        esac
+    done
+}
+
+
+dialog_prog()
+{
+    whiptail --gauge "$1" 10 70 0
 }
 
 
@@ -244,9 +270,7 @@ dto_ask()
         fi
         
         # If needed, offer a reboot
-        if [[ $NO_REBOOT -ne 1 ]] && [[ $SGST_REBOOT -eq 1 ]]; then
-            ask_reboot
-        fi
+        [[ $NO_REBOOT -ne 1 ]] && [[ $SGST_REBOOT -eq 1 ]] && ask_reboot
     fi
 }
 
@@ -338,9 +362,7 @@ dtp_ask()
     fi
         
     # If needed, offer a reboot
-    if [[ $NO_REBOOT -ne 1 ]] && [[ $SGST_REBOOT -eq 1 ]]; then
-        ask_reboot
-    fi
+    [[ $NO_REBOOT -ne 1 ]] && [[ $SGST_REBOOT -eq 1 ]] && ask_reboot
 }
 
 
@@ -431,9 +453,7 @@ config_ask()
     fi
         
     # If needed, offer a reboot
-    if [[ $NO_REBOOT -ne 1 ]] && [[ $SGST_REBOOT -eq 1 ]]; then
-        ask_reboot
-    fi
+    [[ $NO_REBOOT -ne 1 ]] && [[ $SGST_REBOOT -eq 1 ]] && ask_reboot
 }
 
 
@@ -467,40 +487,22 @@ cfg_val_update()
 }
 
 
-
-select_kernel()
+boot_kernel()
 {
-    #current running kernel
-    CUR_KERN=$(uname -r |sed 's/.fc23.armv7hl//')
-    
-    #list installed kernels (read into an array)
-    pushd $BOOT_DIR &>/dev/null
-    read -ra KERNEL_LIST <<<$(ls vmlinuz* |sed -e 's/vmlinuz-//' -e 's/.fc23.armv7hl//' \
-    |awk '!/^ / && NF {print $1; print $1}')
-    popd &>/dev/null
-    
-    #make the selection
-    SEL=$(whiptail --menu "Select the kernel version for next boot:" \
-    --title "Current running kernel version: $CUR_KERN" --notags \
-    $DLG_H $DLG_W $DLG_MH "${KERNEL_LIST[@]}" 3>&1 1>&2 2>&3)
-    
-    #kernel has been selected
-    if [ $? -eq 0 ]; then
-        VMLINUZ=$(echo vmlinuz-$SEL.fc23.armv7hl)
-        DTB_DIR=$(echo dtb-$SEL.fc23.armv7hl)
-        
-        #copy over desired kernel
-        cp -f $BOOT_DIR/$VMLINUZ $BOOT_DIR/kernel7.img &>/dev/null
-        
-        #clean overlay dir then copy required dtb files
-        rm -f $BOOT_DIR/overlays/* &>/dev/null
-        cp $BOOT_DIR/$DTB_DIR/overlays/* $BOOT_DIR/overlays/ &>/dev/null
-        cp -f $BOOT_DIR/$DTB_DIR/*.dtb $BOOT_DIR/ &>/dev/null
-        SGST_REBOOT=1
-        
-        #offer a reboot
-        ask_reboot "$SEL will be used for the next boot"
-     fi
+    VMLINUZ=$(echo vmlinuz-$1.fc23.armv7hl)
+    DTB_DIR=$(echo dtb-$1.fc23.armv7hl)
+
+    #copy over desired kernel
+    cp -f $BOOT_DIR/$VMLINUZ $BOOT_DIR/kernel7.img &>/dev/null
+
+    #clean overlay dir then copy required dtb files
+    rm -f $BOOT_DIR/overlays/* &>/dev/null
+    cp $BOOT_DIR/$DTB_DIR/overlays/* $BOOT_DIR/overlays/ &>/dev/null
+    cp -f $BOOT_DIR/$DTB_DIR/*.dtb $BOOT_DIR/ &>/dev/null
+    SGST_REBOOT=1
+
+    #offer a reboot
+    ask_reboot "$1 will be used for the next boot"
 }
 
 
@@ -511,10 +513,8 @@ mesa_vc4()
     if [[ $BAILED -ne 1 ]] && [[ $NO_OVERLAY -ne 1 ]]; then
         if [[ $DRV_DISABLED -eq 1 ]]; then
             cfg_enable gpu_mem
-            cfg_disable avoid_warnings
         else
             cfg_disable gpu_mem
-            cfg_enable avoid_warnings
             #currently conflicts with pi camera requirements
             cfg_disable start_x
         fi
@@ -532,12 +532,63 @@ pi_camera()
             #currrently conflicts with the vc4 driver requirements
             dto_disable vc4-kms-v3d
             cfg_disable avoid_warnings
-            if [[ $CFG_VALUE -lt 128 ]]; then
-                cfg_val_update gpu_mem 128
-            fi
+            [[ $CFG_VALUE -lt 128 ]] && cfg_val_update gpu_mem 128
         fi
     fi
     ask_reboot
+}
+
+
+bt_ask()
+{   
+    if hcitool dev |grep hci &>/dev/null || systemctl is-enabled brcm43438.service &>/dev/null; then 
+        yes_no "Disable RPi 3 Bluetooth" "Do you want to disable bluetooth support for your RPi 3?"
+        [ $? == 1 ] && return 0 || bt_disable
+    else
+        yes_no "Enable RPi 3 Bluetooth" "Do you want to enable bluetooth support for your RPi 3?"
+        [ $? == 1 ] && return 0 || bt_enable
+    fi
+    
+    ask_reboot
+}
+
+
+bt_enable()
+{
+    #check for RPi3 device
+    if ! cat /sys/firmware/devicetree/base/model |grep -c "Raspberry Pi 3 Model B" &>/dev/null; then
+        msg_box "Raspberry Pi 3 Model B not found, can not proceed"
+        return 0
+    fi
+    
+    #check for software support
+    if ! rpm -q bluetooth-rpi3 &>/dev/null; then 
+        msg_box "The bluetooth-rpi3 package is not installed, please install.\n\nFor example: dnf install bluetooth-rpi3"
+        return 0
+        # Need to spend some time figuring out how to wrap dnf with progress bar code
+        # so we can offer to install required pachages when not found.
+        #if [ $? == 0 ]; then
+        #    dnf -y --quiet install bluetooth-rpi3
+        #fi
+    fi
+
+    #ensure pi3-disable-bt overlay is disabled
+    dto_disable pi3-disable-bt
+
+    #enable / start systemd service
+    systemctl enable brcm43438.service &>/dev/null
+    systemctl start brcm43438.service &>/dev/null
+}
+
+
+bt_disable()
+{
+    #stop & disable systemd service
+    systemctl stop brcm43438.service  &>/dev/null
+    systemctl disable brcm43438.service  &>/dev/null
+
+    #enable pi3-disable-bt overlay
+    dto_enable pi3-disable-bt
 }
 
 
@@ -575,7 +626,7 @@ swap_add()
         pv -p --size "$1"M /dev/zero | dd of=/swapfile bs=1k count="$1"k status=noxfer
         mkswap /swapfile
     else
-        (pv -n --size "$1"M /dev/zero | dd of=/swapfile bs=1k count="$1"k status=noxfer && mkswap /swapfile) 2>&1 | whiptail --gauge "$SWAP_MSG" 10 70 0
+        (pv -n --size "$1"M /dev/zero | dd of=/swapfile bs=1k count="$1"k status=noxfer && mkswap /swapfile) 2>&1 | dialog_prog "$SWAP_MSG"
     fi
     
     #could we use fallocate here as its much faster? or will we end up with a sparse file?
@@ -583,10 +634,10 @@ swap_add()
     #fallocate -l '$1'M /swapfile
     
     #world readable swap files are a huge local vulnerability
-    chmod 600 /swapfile
+    chmod 600 /swapfile &>/dev/null
     
     #activate it
-    swapon /swapfile
+    swapon /swapfile &>/dev/null
     
     #enable it at boot
     echo "/swapfile swap swap defaults 0 0" >>$FSTAB
@@ -606,14 +657,10 @@ rootfs_ask()
 rootfs_grow()
 {   
     # Do we need to repartition?
-    if [ ! -e /.rootfs-repartition ]; then
-        return 0
-    fi
+    [ ! -e /.rootfs-repartition ] && return 0
 
     # Check for kernel cmdline parameter 'nofsresize'
-    if [ $(cat /proc/cmdline |grep -cim1 nofsresize) -eq 1 ];then
-        return 0
-    fi
+    [ $(cat /proc/cmdline |grep -cim1 nofsresize) -eq 1 ] && return 0
     
     if [ ! -e /.rootfs-grow ]; then
         # Grab required partition & block device information
@@ -625,7 +672,7 @@ rootfs_grow()
     
         if [ "$ROOT_PART" != "$LAST_PART" ]; then
             msg_box "Root partition $ROOT_PART is not the last partiton. Can not proceed."
-            rm -f /.rootfs-repartition
+            rm -f /.rootfs-repartition &>/dev/null
             return 0
         fi
     
@@ -639,7 +686,7 @@ rootfs_grow()
         # Ensure there is enough space to grow the root partition
         if [ $FREE_SECTS -lt 10 ]; then
             msg_box "Not enough space remaining on $ROOT_PART. The root parition can not be further expanded."
-            rm -f /.rootfs-repartition
+            rm -f /.rootfs-repartition &>/dev/null
             return 0
         fi
     
@@ -652,172 +699,174 @@ rootfs_grow()
         echo -e "\np\nd\n$PART_NUM\nn\np\n$PART_NUM\n$START_SECT\n\nw"| fdisk $BLK_DEV &>/dev/null
         
         touch /.rootfs-grow
-        systemctl enable rootfs-grow.service
-        systemctl reboot
+        systemctl enable rootfs-grow.service &>/dev/null
+        systemctl reboot &>/dev/null
     else
         ROOT_PART=$(mount |grep 'on / type'|awk '{ print $1 }')
         resize2fs $ROOT_PART &>/dev/null
-        rm -f /.rootfs-grow /.rootfs-repartition
+        rm -f /.rootfs-grow /.rootfs-repartition &>/dev/null
         # Don't want it running every boot as its job is already done.
-        systemctl disable rootfs-grow.service
+        systemctl disable rootfs-grow.service &>/dev/null
     fi
+}
+
+
+menu_kernel()
+{
+    #current running kernel
+    CUR_KERN=$(uname -r |sed 's/.fc23.armv7hl//')
+    
+    local MENU_TITLES=(
+    "Current running kernel version: $CUR_KERN" "Select the kernel version for next boot:")
+
+    local MENU_BUTTONS=("Select" "Cancel")
+    
+    #list installed kernels
+    read -ra KERNEL_LIST <<<$(ls $BOOT_DIR/vmlinuz* |sed -e 's|/boot/vmlinuz-||' -e 's|.fc23.armv7hl||')
+
+    local MENU_ITEMS
+    declare -A MENU_ACTIONS
+    
+    for i in `seq 1 ${#KERNEL_LIST[@]}`; do
+        MENU_ITEMS=("${MENU_ITEMS[@]}" "$i. Kernel Version" "${KERNEL_LIST[$(($i-1))]}")
+        MENU_ACTIONS["$i. Kernel Version"]="boot_kernel ${KERNEL_LIST[$(($i-1))]} ; break"
+    done
+
+    dialog_menu $MENU_ARGS
 }
 
 
 menu_swap()
 {
-    while true; do
-        SEL=$(whiptail --menu "Choose the swap file size" \
-        --backtitle "$NAME - $VERSION" \
-        --title "Swap File Selection Menu" $DLG_H $DLG_W $DLG_MH \
-        --ok-button Select \
-        "1. 256 MB " "Create and enable a 256MB swap file" \
-        "2. 512 MB " "Create and enable a 512MB swap file" \
-        "3. 1024 MB  " "Create and enable a 1024MB (1GB) swap file" \
-        3>&1 1>&2 2>&3)
-        RET=$?
-        if [ $RET == 1 ]; then
-            break
-        elif [ $RET == 0 ]; then
-            case "$SEL" in
-                1.*) swap_add 256; break ;;
-                2.*) swap_add 512; break ;;
-                3.*) swap_add 1024;break ;;
-                *) msg_box "Error: unrecognized option" ;;
-            esac || msg_box "There was an error running option $SEL"
-        fi
-    done
+    local MENU_TITLES=(
+    "Swap File Selection" "Choose required swap file size")
+    
+    local MENU_BUTTONS=("Select" "Cancel")
+    
+    local MENU_ITEMS=(
+    "1. 256 MB " "Create and enable a 256MB swap file"
+    "2. 512 MB " "Create and enable a 512MB swap file"
+    "3. 1024 MB  " "Create and enable a 1024MB (1GB) swap file")
+    
+    declare -A MENU_ACTIONS=(
+    [${MENU_ITEMS[0]}]="swap_add 256 ; break"
+    [${MENU_ITEMS[2]}]="swap_add 512 ; break"
+    [${MENU_ITEMS[4]}]="swap_add 1024 ; break")
+    
+    dialog_menu $MENU_ARGS
 }
 
 
 menu_rtc()
-{   
+{
     #We don't have to enable i2c interface first here as the DTO should
     #automatically enable it (refer: /boot/overlay/README)
     dto_ask i2c-rtc --no-reboot
-    if [[ $BAILED -ne 1 ]] && [[ $DRV_DISABLED -ne 1 ]]; then
-        # ensure nortc is not in cmdline.txt
-        sed -i 's/ nortc//' $CMD_TXT
-        while true; do
-            SEL=$(whiptail --menu "Choose your I2C Real Time Clock device" \
-            --backtitle "$NAME - $VERSION" \
-            --title "RTC Device Selection Menu" $DLG_H $DLG_W $DLG_MH \
-            --ok-button Select \
-            "1. DS1307 " "Select the DS1307 device" \
-            "2. DS3231  " "Select the DS3231 device" \
-            "3. MCP7941x " "Select the MCP7941x device" \
-            "4. PCF2127 " "Select the PCF2127 device" \
-            "5. PCF8523 " "Select the PCF8523 device" \
-            "6. PCF8563 " "Select the PCF8563 device" \
-            3>&1 1>&2 2>&3)
-            RET=$?
-            if [ $RET == 1 ]; then
-                break
-            elif [ $RET == 0 ]; then
-                case "$SEL" in
-                    1.*) dto_prm_update i2c-rtc ds1307; break ;;
-                    2.*) dto_prm_update i2c-rtc ds3231; break ;;
-                    3.*) dto_prm_update i2c-rtc mcp7941x; break ;;
-                    4.*) dto_prm_update i2c-rtc pcf2127; break;;
-                    5.*) dto_prm_update i2c-rtc pcf8523; break ;;
-                    6.*) dto_prm_update i2c-rtc pcf8563; break ;;
-                    *) msg_box "Error: unrecognized option" ;;
-                esac || msg_box "There was an error running option $SEL"
-            fi
-        done            
-    fi
+    
+    #check we haven't bailed or disabled the driver
+    [ $BAILED -eq 1 -o $DRV_DISABLED -eq 1 ] && break
+        
+    #ensure nortc is not in cmdline.txt
+    sed -i 's/ nortc//' $CMD_TXT &>/dev/null
+    
+    local MENU_TITLES=(
+    "RTC Device Selection" "Choose your I2C Real Time Clock device")
+
+    local MENU_BUTTONS=("Select" "Cancel")
+    
+    local MENU_ITEMS=(
+    "1. DS1307 " "Select the DS1307 device"
+    "2. DS3231  " "Select the DS3231 device"
+    "3. MCP7941x " "Select the MCP7941x device"
+    "4. PCF2127 " "Select the PCF2127 device"
+    "5. PCF8523 " "Select the PCF8523 device"
+    "6. PCF8563 " "Select the PCF8563 device")
+    
+    declare -A MENU_ACTIONS=(
+    [${MENU_ITEMS[0]}]="dto_prm_update i2c-rtc ds1307 ; break"
+    [${MENU_ITEMS[2]}]="dto_prm_update i2c-rtc ds3231 ; break"
+    [${MENU_ITEMS[4]}]="dto_prm_update i2c-rtc mcp7941x ; break"
+    [${MENU_ITEMS[6]}]="dto_prm_update i2c-rtc pcf2127 ; break"
+    [${MENU_ITEMS[8]}]="dto_prm_update i2c-rtc pcf8523 ; break"
+    [${MENU_ITEMS[10]}]="dto_prm_update i2c-rtc pcf8563 ; break")
+    
+    dialog_menu $MENU_ARGS
+    
     ask_reboot
 }
 
 
 menu_drivers()
 {
-    while true; do
-        SEL=$(whiptail --menu "Choose a driver to enable or disable" \
-        --backtitle "$NAME - $VERSION" \
-        --title "Driver Selection Menu" $DLG_H $DLG_W $DLG_MH \
-        --cancel-button "Main Menu" --ok-button Select \
-        "1. Mesa DRM VC4 " "Mesa/DRM VC4 driver for Rpi (Experimental)" \
-        "2. Pi Camera  " "Enable or disable the RPi Camera" \
-        "3. LIRC RPi " "Linux Infrared Remote Control for the RPi (LIRC)" \
-        "4. I2C RTC " "Realtime Cock (RTC) support" \
-        "5. BCM2835 MMC " "bcm2835-mmc SD/MMC driver" \
-        3>&1 1>&2 2>&3)
-        RET=$?
-        if [ $RET == 1 ]; then
-            break
-        elif [ $RET == 0 ]; then
-            case "$SEL" in
-                1.*) mesa_vc4 ;;
-                2.*) pi_camera ;;
-                3.*) dto_ask lirc-rpi ;;
-                4.*) menu_rtc ;;
-                5.*) dto_ask mmc ;;
-                *) msg_box "Error: unrecognized option" ;;
-            esac || msg_box "There was an error running option $SEL"
-        fi
-    done 
+    local MENU_TITLES=(
+    "Enable or Disable System Drivers" "Choose an Option")
+    
+    local MENU_BUTTONS=("Select" "Main Menu")
+    
+    local MENU_ITEMS=(
+    "1. Mesa DRM VC4" "Mesa/DRM VC4 driver for Rpi (Experimental)"
+    "2. Pi Camera" "Enable or disable the RPi Camera"
+    "3. LIRC RPi" "Linux Infrared Remote Control for the RPi (LIRC)"
+    "4. I2C RTC" "Realtime Cock (RTC) support"
+    "5. RPi3 Bluetooth" "RPi3 bluetooth support")
+    
+    declare -A MENU_ACTIONS=(
+    [${MENU_ITEMS[0]}]=mesa_vc4
+    [${MENU_ITEMS[2]}]=pi_camera
+    [${MENU_ITEMS[4]}]="dto_ask lirc-rpi"
+    [${MENU_ITEMS[6]}]=menu_rtc
+    [${MENU_ITEMS[8]}]="bt_ask")
+    
+    dialog_menu $MENU_ARGS
 }
 
 
 menu_params()
 {
-       while true; do
-        SEL=$(whiptail --menu "Choose a parameter to enable or disable" \
-        --backtitle "$NAME - $VERSION" \
-        --title "Option Selection Menu" $DLG_H $DLG_W $DLG_MH \
-        --cancel-button "Main Menu" --ok-button Select \
-        "1. I2C interface " "Inter-Integrated Circuit (i2c) interface" \
-        "2. I2S interface  " "Inter-IC Sound, (i2s) interface" \
-        "3. SPI interface " "Serial Peripheral Interface" \
-        "4. Audio " "On-board ALSA audio interface" \
-        3>&1 1>&2 2>&3)
-        RET=$?
-        if [ $RET == 1 ]; then
-            break
-        elif [ $RET == 0 ]; then
-            case "$SEL" in
-                1.*) dtp_ask i2c ;;
-                2.*) dtp_ask i2s ;;
-                3.*) dtp_ask spi ;;
-                4.*) dtp_ask audio ;;
-                *) msg_box "Error: unrecognized option" ;;
-            esac || msg_box "There was an error running option $SEL"
-        fi
-    done 
+    local MENU_TITLES=(
+    "Enable or Disable Device Tree Paramters" "Choose an Option")
+    
+    local MENU_BUTTONS=("Select" "Main Menu")
+    
+    local MENU_ITEMS=(
+    "1. I2C interface" "Inter-Integrated Circuit (i2c) interface"
+    "2. I2S interface" "Inter-IC Sound, (i2s) interface"
+    "3. SPI interface" "Serial Peripheral Interface"
+    "4. Audio" "On-board ALSA audio interface")
+    
+    declare -A MENU_ACTIONS=(
+    [${MENU_ITEMS[0]}]="dtp_ask i2c"
+    [${MENU_ITEMS[2]}]="dtp_ask i2s"
+    [${MENU_ITEMS[4]}]="dtp_ask spi"
+    [${MENU_ITEMS[6]}]="dtp_ask audio")
+    
+    dialog_menu $MENU_ARGS
 }
 
 
 menu_main()
 {
-    while true; do
-        SEL=$(whiptail --menu "Choose an Option" --backtitle "$NAME - $VERSION" \
-        --title "System Configuration" $DLG_H $DLG_W $DLG_MH \
-        --cancel-button Exit --ok-button Select \
-        "1. Set Boot Kernel  " "Select which kernel you want to use at boot" \
-        "2. DT Paramters  " "Enable or disable Device Tree (DT) parameters" \
-        "3. Hardware Support  " "Enable or disable hardware support / drivers" \
-        "4. Expand Root FS  " "Expand (grow) root filesystem on SD card" \
-        "5. Add Swap File  " "Add and enable a swap file" \
-        "6. About $NAME  " "Information about this configuration tool" \
-        3>&1 1>&2 2>&3)
-        RET=$?
-        if [ $RET == 1 ]; then
-            break
-        elif [ $RET == 0 ]; then
-            case "$SEL" in
-                1.*) select_kernel ;;
-                2.*) menu_params ;;                
-                3.*) menu_drivers ;;
-                4.*) rootfs_ask ;;
-                5.*) menu_swap ;;
-                6.*) about ;;
-                *) msg_box "Error: unrecognized option" ;;
-            esac || msg_box "There was an error running option $SEL"
-        else
-            exit 1
-        fi
-    done
+    local MENU_TITLES=("System Configuration" "Choose an Option")
+    
+    local MENU_BUTTONS=("Select" "Exit")
+    
+    local MENU_ITEMS=(
+    "1. Set Boot Kernel" "Select which kernel you want to use at boot"
+    "2. DT Paramters" "Enable or disable Device Tree (DT) parameters"
+    "3. Hardware Support" "Enable or disable hardware support / drivers"
+    "4. Expand Root FS" "Expand (grow) root filesystem on SD card"
+    "5. Add Swap File" "Add and enable a swap file"
+    "6. About $NAME" "Information about this configuration utility")
+    
+    declare -A MENU_ACTIONS=(
+    [${MENU_ITEMS[0]}]=menu_kernel
+    [${MENU_ITEMS[2]}]=menu_params
+    [${MENU_ITEMS[4]}]=menu_drivers
+    [${MENU_ITEMS[6]}]=rootfs_ask
+    [${MENU_ITEMS[8]}]=menu_swap
+    [${MENU_ITEMS[10]}]=about)
+    
+    dialog_menu $MENU_ARGS
     
     #clear screen & exit
     clear; exit 0
@@ -837,6 +886,27 @@ Report issues to: $BUG_REPORTS"
 }
 
 
+usage()
+{
+echo "Usage: $NAME [OPTION] <overlay|paramater|option|value>
+
+Configuration of various system wide options in FedBerry.
+
+--dto-enable <overlay>      Enable Device Tree overlay
+--dto-disable <overlay>     Disable Device Tree overlay
+--dtp-enable <paramater>    Enable Device Tree parameter
+--dtp-disable <paramater>   Device Tree parameter
+--cfg-enable <option>       Enable config.txt option
+--cfg-disable <option>      Disable config.txt option
+--rootfs-grow               Expand (grow) root filesystem on SD card
+--bt-enable                 Enable bluetooth support for RPi3
+--bt-disable                Disable bluetooth support for RPi3
+--add-swap <size in MB>     Add and enable a swap file
+--version                   Output version information and exit
+--help                      Display this help and exit"
+}
+
+
 requires()
 {
 
@@ -846,7 +916,7 @@ requires()
     fi
     
     
-    if [[ $NO_DIALOG -eq 1 ]]; then
+    if [[ $NO_DIALOG -eq 0 ]]; then
         # we require whiptail
         if [ ! -f /usr/bin/whiptail ]; then
             echo "$NAME requires whiptail\n Please install"
@@ -926,11 +996,15 @@ case $1 in
     "--cfg-disable")
         cmdline cfg_enable $2 ;;
     "--rootfs-grow")
-        NO_DIALOG=1
-        rootfs_grow ;;
+        NO_DIALOG=1 rootfs_grow ;;
+    "--bt-enable")
+        NO_DIALOG=1 bt_enable ;;
+    "--bt-disable")
+        NO_DIALOG=1 bt_disable ;;
     "--add-swap")
-        NO_DIALOG=1
-        swap_add $2;;
+        NO_DIALOG=1 swap_add $2;;
+    "--help")
+        usage ;;
     "--version")
         echo "$NAME - Version: $VERSION" ;;
     "")
