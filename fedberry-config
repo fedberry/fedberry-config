@@ -889,6 +889,27 @@ Report issues to: $BUG_REPORTS"
 }
 
 
+usage()
+{
+echo "Usage: $NAME [OPTION] <overlay|paramater|option|value>
+
+Configuration of various system wide options in FedBerry.
+
+--dto-enable <overlay>      Enable Device Tree overlay
+--dto-disable <overlay>     Disable Device Tree overlay
+--dtp-enable <paramater>    Enable Device Tree parameter
+--dtp-disable <paramater>   Device Tree parameter
+--cfg-enable <option>       Enable config.txt option
+--cfg-disable <option>      Disable config.txt option
+--rootfs-grow               Expand (grow) root filesystem on SD card
+--bt-enable                 Enable bluetooth support for RPi3
+--bt-disable                Disable bluetooth support for RPi3
+--add-swap <size in MB>     Add and enable a swap file
+--version                   Output version information and exit
+--help                      Display this help and exit"
+}
+
+
 requires()
 {
 
@@ -985,6 +1006,8 @@ case $1 in
         NO_DIALOG=1 bt_disable ;;
     "--add-swap")
         NO_DIALOG=1 swap_add $2;;
+    "--help")
+        usage ;;
     "--version")
         echo "$NAME - Version: $VERSION" ;;
     "")
