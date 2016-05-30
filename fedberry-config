@@ -548,6 +548,59 @@ pi_camera()
 }
 
 
+bt_ask()
+{   
+    if hcitool dev |grep hci &>/dev/null || systemctl is-enabled brcm43438.service &>/dev/null; then 
+        yes_no "Disable RPi 3 Bluetooth" "Do you want to disable bluetooth support for your RPi 3?"
+        [ $? == 1 ] && return 0 || bt_disable
+    else
+        yes_no "Enable RPi 3 Bluetooth" "Do you want to enable bluetooth support for your RPi 3?"
+        [ $? == 1 ] && return 0 || bt_enable
+    fi
+    
+    ask_reboot
+}
+
+
+bt_enable()
+{
+    #check for RPi3 device
+    if ! cat /sys/firmware/devicetree/base/model |grep -c "Raspberry Pi 3 Model B" &>/dev/null; then
+        msg_box "Raspberry Pi 3 Model B not found, can not proceed"
+        return 0
+    fi
+    
+    #check for software support
+    if ! rpm -q bluetooth-rpi3 &>/dev/null; then 
+        msg_box "The bluetooth-rpi3 package is not installed, please install.\n\nFor example: dnf install bluetooth-rpi3"
+        return 0
+        # Need to spend some time figuring out how to wrap dnf with progress bar code
+        # so we can offer to install required pachages when not found.
+        #if [ $? == 0 ]; then
+        #    dnf -y --quiet install bluetooth-rpi3
+        #fi
+    fi
+
+    #ensure pi3-disable-bt overlay is disabled
+    dto_disable pi3-disable-bt
+
+    #enable / start systemd service
+    systemctl enable brcm43438.service &>/dev/null
+    systemctl start brcm43438.service &>/dev/null
+}
+
+
+bt_disable()
+{
+    #stop & disable systemd service
+    systemctl stop brcm43438.service  &>/dev/null
+    systemctl disable brcm43438.service  &>/dev/null
+
+    #enable pi3-disable-bt overlay
+    dto_enable pi3-disable-bt
+}
+
+
 swap_add()
 {
     #we need an argument
@@ -768,14 +821,16 @@ menu_drivers()
     "2. Pi Camera" "Enable or disable the RPi Camera"
     "3. LIRC RPi" "Linux Infrared Remote Control for the RPi (LIRC)"
     "4. I2C RTC" "Realtime Cock (RTC) support"
-    "5. BCM2835 MMC" "bcm2835-mmc SD/MMC driver")
+    "5. BCM2835 MMC" "bcm2835-mmc SD/MMC driver"
+    "6. RPi3 Bluetooth" "RPi3 bluetooth support")
     
     declare -A MENU_ACTIONS=(
     [${MENU_ITEMS[0]}]=mesa_vc4
     [${MENU_ITEMS[2]}]=pi_camera
     [${MENU_ITEMS[4]}]="dto_ask lirc-rpi"
     [${MENU_ITEMS[6]}]=menu_rtc
-    [${MENU_ITEMS[8]}]="dto_ask mmc")
+    [${MENU_ITEMS[8]}]="dto_ask mmc"
+    [${MENU_ITEMS[10]}]="bt_ask")
     
     dialog_menu $MENU_ARGS
 }
@@ -937,6 +992,12 @@ case $1 in
     "--rootfs-grow")
         NO_DIALOG=1
         rootfs_grow ;;
+    "--bt-enable")
+        NO_DIALOG=1
+        bt_enable ;;
+    "--bt-disable")
+        NO_DIALOG=1
+        bt_disable ;;
     "--add-swap")
         NO_DIALOG=1
         swap_add $2;;
