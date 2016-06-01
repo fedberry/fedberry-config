@@ -867,9 +867,6 @@ menu_main()
     [${MENU_ITEMS[10]}]=about)
     
     dialog_menu $MENU_ARGS
-    
-    #clear screen & exit
-    clear; exit 0
 }
 
 
@@ -974,6 +971,9 @@ main()
     
     # start main menu
     menu_main
+    
+    #clear screen & exit
+    clear; exit 0
 }
 
 
