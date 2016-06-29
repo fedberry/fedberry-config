@@ -1,19 +1,24 @@
 #!/bin/sh -
 # Copyright (C) 2016, Vaughan Agrez <devel@agrez.net>
+# Copyright (C) 2016, Jeff Bai <jeffbai@aosc.xyz>
 # fedberry-config is released under GPL licence (version 3)
+# cyanberry-config is based on fedberry-config with adaptations for AOSC OS.
 # See LICENSE file for copyright and license details
 
+# cyanberry-config is a name inspired by "fedberry" - a Fedora-based Linux
+# distribution for Raspberry Pi - while AOSC OS currently holds a codename of
+# "CyanFlame", therefore we have cyanberries at hand!
 
 ###
 # VARIABLE_DEFINITIONS
 ###
 
 ### Software
-NAME=fedberry-config
-AUTHORS="Vaughan Agrez"
+NAME=cyanberry-config
+AUTHORS="Vaughan Agrez, Jeff Bai"
 YEAR=2016
 VERSION=0.3.1
-BUG_REPORTS="https://github.com/fedberry/fedberry-config"
+BUG_REPORTS="https://github.com/AOSC-Dev/cyanberry-config"
 
 
 ### Environment variables
@@ -877,8 +882,8 @@ about()
 {
     msg_box "About $NAME - Version: $VERSION"  "\
 $NAME allows for easy configuration of various \
-system wide options in FedBerry. If you have heavily \
-customised your FedBerry installation, some configure \
+system wide options in AOSC OS. If you have heavily \
+customised your AOSC OS installation, some configure \
 options may not function correctly.\n\n\
 Copyright (C) $YEAR, $AUTHORS.\n\
 $NAME is released under GPL licence version 3.\n\n\
