@@ -24,10 +24,10 @@ BUG_REPORTS="https://github.com/AOSC-Dev/cyanberry-config"
 ### Environment variables
 BOOT_DIR=/boot
 ETC_DIR=/etc
-CFG_TXT=$BOOT_DIR/config.txt
-CMD_TXT=$BOOT_DIR/cmdline.txt
-DTO_DIR=$BOOT_DIR/overlays
-FSTAB=$ETC_DIR/fstab
+CFG_TXT="$BOOT_DIR"/config.txt
+CMD_TXT="$BOOT_DIR"/cmdline.txt
+DTO_DIR="$BOOT_DIR"/overlays
+FSTAB="$ETC_DIR"/fstab
 
 
 ### Misc standard messages / args
