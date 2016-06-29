@@ -545,17 +545,6 @@ bt_enable()
         msg_box "Raspberry Pi 3 Model B not found, can not proceed"
         return 0
     fi
-    
-    #check for software support
-    if ! rpm -q bluetooth-rpi3 &>/dev/null; then 
-        msg_box "The bluetooth-rpi3 package is not installed, please install.\n\nFor example: dnf install bluetooth-rpi3"
-        return 0
-        # Need to spend some time figuring out how to wrap dnf with progress bar code
-        # so we can offer to install required pachages when not found.
-        #if [ $? == 0 ]; then
-        #    dnf -y --quiet install bluetooth-rpi3
-        #fi
-    fi
 
     #ensure pi3-disable-bt overlay is disabled
     dto_disable pi3-disable-bt
