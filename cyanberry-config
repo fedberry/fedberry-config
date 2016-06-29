@@ -800,20 +800,18 @@ menu_main()
     local MENU_BUTTONS=("Select" "Exit")
 
     local MENU_ITEMS=(
-    "1. Set Boot Kernel" "Select which kernel you want to use at boot"
-    "2. DT Paramters" "Enable or disable Device Tree (DT) parameters"
-    "3. Hardware Support" "Enable or disable hardware support / drivers"
-    "4. Expand Root FS" "Expand (grow) root filesystem on SD card"
-    "5. Add Swap File" "Add and enable a swap file"
-    "6. About $NAME" "Information about this configuration utility")
+    "1. DT Paramters" "Enable or disable Device Tree (DT) parameters"
+    "2. Hardware Support" "Enable or disable hardware support / drivers"
+    "3. Expand Root FS" "Expand (grow) root filesystem on SD card"
+    "4. Add Swap File" "Add and enable a swap file"
+    "5. About $NAME" "Information about this configuration utility")
 
     declare -A MENU_ACTIONS=(
-    [${MENU_ITEMS[0]}]=menu_kernel
-    [${MENU_ITEMS[2]}]=menu_params
-    [${MENU_ITEMS[4]}]=menu_drivers
-    [${MENU_ITEMS[6]}]=rootfs_ask
-    [${MENU_ITEMS[8]}]=menu_swap
-    [${MENU_ITEMS[10]}]=about)
+    [${MENU_ITEMS[0]}]=menu_params
+    [${MENU_ITEMS[2]}]=menu_drivers
+    [${MENU_ITEMS[4]}]=rootfs_ask
+    [${MENU_ITEMS[6]}]=menu_swap
+    [${MENU_ITEMS[8]}]=about)
 
     dialog_menu $MENU_ARGS
 
