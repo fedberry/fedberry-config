@@ -825,7 +825,7 @@ about()
     msg_box "About $NAME - Version: $VERSION"  "\
 $NAME allows for easy configuration of various \
 system wide options in AOSC OS. If you have heavily \
-customised your AOSC OS installation, some configure \
+customized your AOSC OS installation, some configure \
 options may not function correctly.\n\n\
 Copyright (C) $YEAR, $AUTHORS.\n\
 $NAME is released under GPL licence version 3.\n\n\
