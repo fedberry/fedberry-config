@@ -466,7 +466,7 @@ cfg_check()
 {
     # We need a config.txt
     if [ ! -f $CFG_TXT ]; then
-        echo "Can't find $CFG_TXT\nPlease check your system!"
+        echo "Can't find $CFG_TXT, Please check your system!"
         #Offer the option to create one here?
         exit 1
     fi
