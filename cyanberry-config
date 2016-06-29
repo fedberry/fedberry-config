@@ -66,9 +66,9 @@ msg_box()
 {
     if [[ $NO_DIALOG -ne 1 ]]; then
         if [ -z "$2" ]; then
-            whiptail --msgbox "$1" 20 60
+            whiptail --msgbox "$1" 20 65
         else
-            whiptail --msgbox --title "$1" "$2" 20 60
+            whiptail --msgbox --title "$1" "$2" 20 65
         fi
     else
         echo -e "$1\n$2"
