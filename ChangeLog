@@ -1,0 +1,10 @@
+Release: v0.1.1
+-----------------
+
+- Fixed a mis-used `echo' command.
+
+Release: v0.1
+-----------------
+
+- Forked from fedberry-config.
+- Adapted for AOSC OS on ARM.
