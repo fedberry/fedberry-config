@@ -1,4 +1,4 @@
-#!/bin/sh -
+#!/bin/bash -
 # Copyright (C) 2016, Vaughan Agrez <devel@agrez.net>
 # Copyright (C) 2016, Jeff Bai <jeffbai@aosc.xyz>
 # fedberry-config is released under GPL licence (version 3)
