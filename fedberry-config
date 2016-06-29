@@ -491,26 +491,6 @@ cfg_val_update()
     sed -i "s/^$1=.*$/$1=$2/" $CFG_TXT
 }
 
-
-boot_kernel()
-{
-    VMLINUZ=$(echo vmlinuz-$1.fc23.armv7hl)
-    DTB_DIR=$(echo dtb-$1.fc23.armv7hl)
-
-    #copy over desired kernel
-    cp -f $BOOT_DIR/$VMLINUZ $BOOT_DIR/kernel7.img &>/dev/null
-
-    #clean overlay dir then copy required dtb files
-    rm -f $BOOT_DIR/overlays/* &>/dev/null
-    cp $BOOT_DIR/$DTB_DIR/overlays/* $BOOT_DIR/overlays/ &>/dev/null
-    cp -f $BOOT_DIR/$DTB_DIR/*.dtb $BOOT_DIR/ &>/dev/null
-    SGST_REBOOT=1
-
-    #offer a reboot
-    ask_reboot "$1 will be used for the next boot"
-}
-
-
 mesa_vc4()
 {
     msg_box "WARNING" "The Mesa VC4 driver is EXPERIMENTAL and a W.I.P. It will likely cause system instability."
@@ -713,31 +693,6 @@ rootfs_grow()
         # Don't want it running every boot as its job is already done.
         systemctl disable rootfs-grow.service &>/dev/null
     fi
-}
-
-
-menu_kernel()
-{
-    #current running kernel
-    CUR_KERN=$(uname -r |sed 's/.fc23.armv7hl//')
-    
-    local MENU_TITLES=(
-    "Current running kernel version: $CUR_KERN" "Select the kernel version for next boot:")
-
-    local MENU_BUTTONS=("Select" "Cancel")
-    
-    #list installed kernels
-    read -ra KERNEL_LIST <<<$(ls $BOOT_DIR/vmlinuz* |sed -e 's|/boot/vmlinuz-||' -e 's|.fc23.armv7hl||')
-
-    local MENU_ITEMS
-    declare -A MENU_ACTIONS
-    
-    for i in `seq 1 ${#KERNEL_LIST[@]}`; do
-        MENU_ITEMS=("${MENU_ITEMS[@]}" "$i. Kernel Version" "${KERNEL_LIST[$(($i-1))]}")
-        MENU_ACTIONS["$i. Kernel Version"]="boot_kernel ${KERNEL_LIST[$(($i-1))]} ; break"
-    done
-
-    dialog_menu $MENU_ARGS
 }
 
 
