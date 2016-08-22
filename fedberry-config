@@ -23,6 +23,7 @@ CFG_TXT=$BOOT_DIR/config.txt
 CMD_TXT=$BOOT_DIR/cmdline.txt
 DTO_DIR=$BOOT_DIR/overlays
 FSTAB=$ETC_DIR/fstab
+OS_RELEASE=$ETC_DIR/os-release
 
 
 ### Misc standard messages / args
@@ -485,8 +486,9 @@ cfg_val_update()
 
 boot_kernel()
 {
-    VMLINUZ=$(echo vmlinuz-$1.fc23.armv7hl)
-    DTB_DIR=$(echo dtb-$1.fc23.armv7hl)
+    VERSION_ID=$(cat $OS_RELEASE |grep VERSION_ID |sed 's/VERSION_ID=//')
+    VMLINUZ=$(echo vmlinuz-$1.fc$VERSION_ID.armv7hl)
+    DTB_DIR=$(echo dtb-$1.fc$VERSION_ID.armv7hl)
 
     # copy over desired kernel
     cp -f $BOOT_DIR/$VMLINUZ $BOOT_DIR/kernel7.img &>/dev/null
@@ -707,7 +709,7 @@ rootfs_grow()
 menu_kernel()
 {
     # current running kernel
-    CUR_KERN=$(uname -r |sed 's/.fc23.armv7hl//')
+    CUR_KERN=$(uname -r |sed 's/.fc[0-9][0-9].armv7hl//')
 
     local MENU_TITLES=(
     "Current running kernel version: $CUR_KERN" "Select the kernel version for next boot:")
@@ -715,7 +717,7 @@ menu_kernel()
     local MENU_BUTTONS=("Select" "Cancel")
 
     # list installed kernels
-    read -ra KERNEL_LIST <<<$(ls $BOOT_DIR/vmlinuz* |sed -e 's|/boot/vmlinuz-||' -e 's|.fc23.armv7hl||')
+    read -ra KERNEL_LIST <<<$(ls $BOOT_DIR/vmlinuz* |sed -e 's|/boot/vmlinuz-||' -e 's|.fc[0-9][0-9].armv7hl||')
 
     local MENU_ITEMS
     declare -A MENU_ACTIONS
