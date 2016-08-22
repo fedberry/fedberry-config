@@ -1,4 +1,4 @@
-#!/bin/sh -
+#!/bin/bash -
 # Copyright (C) 2016, Vaughan Agrez <devel@agrez.net>
 # fedberry-config is released under GPL licence (version 3)
 # See LICENSE file for copyright and license details
@@ -12,7 +12,7 @@
 NAME=fedberry-config
 AUTHORS="Vaughan Agrez"
 YEAR=2016
-VERSION=0.3.1
+VERSION=0.3.2
 BUG_REPORTS="https://github.com/fedberry/fedberry-config"
 
 
@@ -23,6 +23,7 @@ CFG_TXT=$BOOT_DIR/config.txt
 CMD_TXT=$BOOT_DIR/cmdline.txt
 DTO_DIR=$BOOT_DIR/overlays
 FSTAB=$ETC_DIR/fstab
+OS_RELEASE=$ETC_DIR/os-release
 
 
 ### Misc standard messages / args
@@ -39,7 +40,7 @@ declare -A DEF_VALS=(
     [spi]=on
     [audio]=on
     )
-    
+
 ### Name references for various DTOs, DTPs & config options 
 declare -A REF_NAMES=(
     [start_x]="RPi Camera"
@@ -87,10 +88,10 @@ ask_reboot()
     if [[ $SGST_REBOOT -eq 1 ]]; then
         if [ -z "$1" ]; then
             yes_no "Reboot Required" "A reboot is required for changes to take affect.\n\nDo you want to reboot now?"
-        else    
+        else
             yes_no "Reboot Required" "$1\n\nDo you want to reboot now?"
         fi
-      
+
         if [ $? == 0 ]; then
             sync
             # add a timer option here to delay reboot by 5 secs?
@@ -110,12 +111,12 @@ dialog_menu()
         local -n BUTTONS=$2
         local -n ITEMS=$3
         local -n ACTIONS=$4
-        
+
         DLG_CMD=(whiptail --title "${TITLE[0]}" --menu "${TITLE[1]}" --backtitle "$NAME - $VERSION" --ok-button "${BUTTONS[0]}" --cancel-button "${BUTTONS[1]}" $DLG_H $DLG_W $DLG_MH)
-        
+
         SEL=$("${DLG_CMD[@]}" "${ITEMS[@]}" 3>&1 1>&2 2>&3)
         RETVAL=$?
-    
+
         case $RETVAL in
             0) eval ${ACTIONS[$SEL]} ;;
             1) break ;;
@@ -136,7 +137,7 @@ dialog_size()
     DLG_H=17
     DLG_MH=$(($DLG_H-9))
     DLG_W=$(tput cols)
-    
+
     if [ -z "$DLG_W" -a "$DLG_W" -lt 60 ]; then
         DLG_W=80
     elif [ "$DLG_W" -gt 178 ]; then
@@ -147,9 +148,9 @@ dialog_size()
 
 dtree_enable()
 {
-    #Force enabling of Device Tree support
+    # Force enabling of Device Tree support
     if [[ $(grep -cim1 ^device_tree= $CFG_TXT) -eq 1 ]]; then
-        #remember, its the opposite!
+        # remember, its the opposite!
         cfg_disable device_tree
     fi
 }
@@ -162,7 +163,7 @@ dto_probe()
     DTO="dtoverlay=$1"
     DTB="$1-overlay.dtb"
     DTBO="$1.dtbo"
-    
+
     # Test config.txt for DTO
     DTO_ENABLED=$(grep -cim1 ^$DTO $CFG_TXT)
     DTO_DISABLED=$(grep -cim1 ^#$DTO $CFG_TXT)
@@ -173,12 +174,12 @@ dto_probe()
 dto_enable()
 {
     dto_probe $1
-    
+
     if [ ! -f $DTO_DIR/$DTB ] && [ ! -f $DTO_DIR/$DTBO ]; then
         echo "ERROR:" "can't find $DTO or $DTBO in current kernel"
         return 0
     fi
-    
+
     if [ $DTO_DISABLED -eq 1 ]; then
         dto_write enable $1
         SGST_REBOOT=1
@@ -217,7 +218,7 @@ dto_write()
 
 dto_prm_update()
 {
-    #1st arg = DTO name; 2nd arg = new parameter value
+    # 1st arg = DTO name; 2nd arg = new parameter value
     sed -i "s/^dtoverlay=$1.*$/dtoverlay=$1,$2/" $CFG_TXT
 }
 
@@ -228,19 +229,19 @@ dto_ask()
     # reset for each selection 
     BAILED=0
     DRV_DISABLED=0
-    
+
     # test for no-reboot switch
     NO_REBOOT=$(echo "$@"| grep -ci "\-\-no\-reboot")
-    
-    # Test config.txt for DTO references
+
+    # test config.txt for DTO references
     dto_probe $1
-        
+
     if [ ! -f $DTO_DIR/$DTB ] && [ ! -f $DTO_DIR/$DTBO ]; then
         msg_box "ERROR:" "can't find $DTO or $DTBO in current kernel"
         NO_OVERLAY=1
     else
         if [ $DTO_ENABLED -eq 1 ]; then
-            #DTO is enabled already
+            # DTO is enabled already
             yes_no "${REF_NAMES[$1]} $TXT_ENB"
             if [ $? -eq 0 ]; then
                 dto_write disable $1
@@ -250,7 +251,7 @@ dto_ask()
                 BAILED=1
             fi
         elif [ $DTO_DISABLED -eq 1 ]; then
-            #DTO is disabled
+            # DTO is disabled
             yes_no "${REF_NAMES[$1]} $TXT_DIS"
             if [ $? -eq 0 ]; then
                 dto_write enable $1
@@ -259,7 +260,7 @@ dto_ask()
                 BAILED=1
             fi
         else
-            #no DTO ref exists, add the requested DTO
+            # no DTO ref exists, add the requested DTO
             yes_no "${REF_NAMES[$1]} $TXT_DIS"
             if [ $? -eq 0 ]; then
                 dto_write add $1
@@ -268,8 +269,7 @@ dto_ask()
                 BAILED=1
             fi
         fi
-        
-        # If needed, offer a reboot
+
         [[ $NO_REBOOT -ne 1 ]] && [[ $SGST_REBOOT -eq 1 ]] && ask_reboot
     fi
 }
@@ -281,7 +281,6 @@ dtp_probe()
     DTP_ENABLED=$(grep -cim1 ^dtparam=$1 $CFG_TXT)
     DTP_DISABLED=$(grep -cim1 ^#dtparam=$1 $CFG_TXT)
     DTP_VAL=$(grep -E "^dtparam=$1|^#dtparam=$1" $CFG_TXT| sed "s/.*$1=//")
-    
 }
 
 
@@ -324,15 +323,15 @@ dtp_ask()
 {
     # reset for each selection 
     BAILED=0
-    
+
     # test for no-reboot switch
     NO_REBOOT=$(echo "$@"| grep -ci "\-\-no\-reboot")
-        
-   # Test for config.txt option
+
+   # test for config.txt option
     dtp_probe $1
-        
+
     if [ $DTP_ENABLED -eq 1 ]; then
-        #dtp ref is enabled already
+        # dtp ref is enabled already
         yes_no "${REF_NAMES[$1]} $TXT_ENB"
         if [ $? -eq 0 ]; then
             dtp_write disable $1
@@ -342,16 +341,16 @@ dtp_ask()
             BAILED=1
         fi
     elif [ $DTP_DISABLED -eq 1 ]; then
-        #config ref is disabled
+        # config ref is disabled
         yes_no "${REF_NAMES[$1]} $TXT_DIS"
         if [ $? -eq 0 ]; then
             dtp_write enable $1
             SGST_REBOOT=1
         else
-            BAILED=1        
+            BAILED=1
         fi
     else
-        #no config ref exists, add it
+        # no config ref exists, add it
         yes_no "${REF_NAMES[$1]} $TXT_DIS"
         if [ $? -eq 0 ]; then
             dtp_write add $1
@@ -360,8 +359,7 @@ dtp_ask()
             BAILED=1
         fi
     fi
-        
-    # If needed, offer a reboot
+
     [[ $NO_REBOOT -ne 1 ]] && [[ $SGST_REBOOT -eq 1 ]] && ask_reboot
 }
 
@@ -415,15 +413,15 @@ config_ask()
 {
     # reset for each selection 
     BAILED=0
-    
+
     # test for no-reboot switch
     NO_REBOOT=$(echo "$@"| grep -ci "\-\-no\-reboot")
-        
-   # Test for config.txt option
+
+   # test for config.txt option
     cfg_probe $1
-        
+
     if [ $CFG_ENABLED -eq 1 ]; then
-        #config ref is enabled already
+        # config ref is enabled already
         yes_no "${REF_NAMES[$1]} $TXT_ENB"
         if [ $? -eq 0 ]; then
             cfg_write disable $1
@@ -433,16 +431,16 @@ config_ask()
             BAILED=1
         fi
     elif [ $CFG_DISABLED -eq 1 ]; then
-        #config ref is disabled
+        # config ref is disabled
         yes_no "${REF_NAMES[$1]} $TXT_DIS"
         if [ $? -eq 0 ]; then
             cfg_write enable $1
             SGST_REBOOT=1
         else
-            BAILED=1        
+            BAILED=1
         fi
     else
-        #no config ref exists, add it
+        # no config ref exists, add it
         yes_no "${REF_NAMES[$1]} $TXT_DIS"
         if [ $? -eq 0 ]; then
             cfg_write add $1
@@ -451,8 +449,7 @@ config_ask()
             BAILED=1
         fi
     fi
-        
-    # If needed, offer a reboot
+
     [[ $NO_REBOOT -ne 1 ]] && [[ $SGST_REBOOT -eq 1 ]] && ask_reboot
 }
 
@@ -462,18 +459,18 @@ cfg_check()
     # We need a config.txt
     if [ ! -f $CFG_TXT ]; then
         echo "Can't find $CFG_TXT\nPlease check your system!"
-        #Offer the option to create one here?
+        # Offer the option to create one here?
         exit 1
-    fi 
+    fi
 
     # NOTE: It adds another layer of complexity to deal with device_tree_param/dtparam
     # and device_tree_overlay/dtoverlay refs independently. So if found, just replace
     # them all accordingly
-    
+
     if [[ $(grep -cim1 device_tree_param $CFG_TXT) -eq 1 ]]; then
         sed -i 's/device_tree_param/dtparam/' $CFG_TXT
     fi
-    
+
     if [[ $(grep -cim1 device_tree_overlay $CFG_TXT) -eq 1 ]]; then
         sed -i 's/device_tree_overlay/dtoverlay/' $CFG_TXT
     fi
@@ -482,26 +479,27 @@ cfg_check()
 
 cfg_val_update()
 {
-    #1st arg = config / paramater name; 2nd arg = new parameter value
+    # 1st arg = config / paramater name; 2nd arg = new parameter value
     sed -i "s/^$1=.*$/$1=$2/" $CFG_TXT
 }
 
 
 boot_kernel()
 {
-    VMLINUZ=$(echo vmlinuz-$1.fc23.armv7hl)
-    DTB_DIR=$(echo dtb-$1.fc23.armv7hl)
+    VERSION_ID=$(cat $OS_RELEASE |grep VERSION_ID |sed 's/VERSION_ID=//')
+    VMLINUZ=$(echo vmlinuz-$1.fc$VERSION_ID.armv7hl)
+    DTB_DIR=$(echo dtb-$1.fc$VERSION_ID.armv7hl)
 
-    #copy over desired kernel
+    # copy over desired kernel
     cp -f $BOOT_DIR/$VMLINUZ $BOOT_DIR/kernel7.img &>/dev/null
 
-    #clean overlay dir then copy required dtb files
+    # clean overlay dir then copy required dtb files
     rm -f $BOOT_DIR/overlays/* &>/dev/null
     cp $BOOT_DIR/$DTB_DIR/overlays/* $BOOT_DIR/overlays/ &>/dev/null
     cp -f $BOOT_DIR/$DTB_DIR/*.dtb $BOOT_DIR/ &>/dev/null
     SGST_REBOOT=1
 
-    #offer a reboot
+    # offer a reboot
     ask_reboot "$1 will be used for the next boot"
 }
 
@@ -515,7 +513,7 @@ mesa_vc4()
             cfg_enable gpu_mem
         else
             cfg_disable gpu_mem
-            #currently conflicts with pi camera requirements
+            # currently conflicts with pi camera requirements
             cfg_disable start_x
         fi
     fi
@@ -529,7 +527,7 @@ pi_camera()
     if [[ $BAILED -ne 1 ]]; then
         if [[ $OPT_DISABLED -ne 1 ]]; then
             cfg_enable gpu_mem
-            #currrently conflicts with the vc4 driver requirements
+            # currrently conflicts with the vc4 driver requirements
             dto_disable vc4-kms-v3d
             cfg_disable avoid_warnings
             [[ $CFG_VALUE -lt 128 ]] && cfg_val_update gpu_mem 128
@@ -540,7 +538,7 @@ pi_camera()
 
 
 bt_ask()
-{   
+{
     if hcitool dev |grep hci &>/dev/null || systemctl is-enabled brcm43438.service &>/dev/null; then 
         yes_no "Disable RPi 3 Bluetooth" "Do you want to disable bluetooth support for your RPi 3?"
         [ $? == 1 ] && return 0 || bt_disable
@@ -548,20 +546,20 @@ bt_ask()
         yes_no "Enable RPi 3 Bluetooth" "Do you want to enable bluetooth support for your RPi 3?"
         [ $? == 1 ] && return 0 || bt_enable
     fi
-    
+
     ask_reboot
 }
 
 
 bt_enable()
 {
-    #check for RPi3 device
+    # check for RPi3 device
     if ! cat /sys/firmware/devicetree/base/model |grep -c "Raspberry Pi 3 Model B" &>/dev/null; then
         msg_box "Raspberry Pi 3 Model B not found, can not proceed"
         return 0
     fi
-    
-    #check for software support
+
+    # check for software support
     if ! rpm -q bluetooth-rpi3 &>/dev/null; then 
         msg_box "The bluetooth-rpi3 package is not installed, please install.\n\nFor example: dnf install bluetooth-rpi3"
         return 0
@@ -572,10 +570,10 @@ bt_enable()
         #fi
     fi
 
-    #ensure pi3-disable-bt overlay is disabled
+    # ensure pi3-disable-bt overlay is disabled
     dto_disable pi3-disable-bt
 
-    #enable / start systemd service
+    # enable / start systemd service
     systemctl enable brcm43438.service &>/dev/null
     systemctl start brcm43438.service &>/dev/null
 }
@@ -583,44 +581,44 @@ bt_enable()
 
 bt_disable()
 {
-    #stop & disable systemd service
+    # stop & disable systemd service
     systemctl stop brcm43438.service  &>/dev/null
     systemctl disable brcm43438.service  &>/dev/null
 
-    #enable pi3-disable-bt overlay
+    # enable pi3-disable-bt overlay
     dto_enable pi3-disable-bt
 }
 
 
 swap_add()
 {
-    #we need an argument
+    # we need an argument
     if [[ "$1" == "" ]]; then
         echo "Missing argument"
         return 0
     fi
-        
-    #check for existing swap file
+
+    # check for existing swap file
     CHECK_SWAP=$(swapon --show --noheadings)
     if [ "$CHECK_SWAP" != "" ]; then
         msg_box "Existing swap file/partition found, can not proceed."
         return 0
     fi
-    
-    #check for sufficient disk space (swap + min 1GB extra?)
+
+    # check for sufficient disk space (swap + min 1GB extra?)
     ROOTFS_INFO=( $(df |grep " /$") )
     ROOTFS_FREE=$(echo ${ROOTFS_INFO[3]})
     SWAP_REQ=$(($1 * 1024))
     REQ_FREE=$(($SWAP_REQ + 1048576))
-    
+
     if [ $ROOTFS_FREE -lt $REQ_FREE ]; then
         msg_box "Insufficient free space on rootfs."
         return 0
     fi
-    
-    #create swap file & format it.
+
+    # create swap file & format it.
     SWAP_MSG="Creating $1MB swap file, please wait..."
-    
+
     if [ $NO_DIALOG -eq 1 ]; then
         msg_box "$SWAP_MSG"
         pv -p --size "$1"M /dev/zero | dd of=/swapfile bs=1k count="$1"k status=noxfer
@@ -628,18 +626,18 @@ swap_add()
     else
         (pv -n --size "$1"M /dev/zero | dd of=/swapfile bs=1k count="$1"k status=noxfer && mkswap /swapfile) 2>&1 | dialog_prog "$SWAP_MSG"
     fi
-    
-    #could we use fallocate here as its much faster? or will we end up with a sparse file?
-    #Note: Btrfs does not support swap files and fallocate may cause problems with F2FS or XFS
-    #fallocate -l '$1'M /swapfile
-    
-    #world readable swap files are a huge local vulnerability
+
+    # could we use fallocate here as its much faster? or will we end up with a sparse file?
+    # Note: Btrfs does not support swap files and fallocate may cause problems with F2FS or XFS
+    # fallocate -l '$1'M /swapfile
+
+    # world readable swap files are a huge local vulnerability
     chmod 600 /swapfile &>/dev/null
-    
-    #activate it
+
+    # activate it
     swapon /swapfile &>/dev/null
-    
-    #enable it at boot
+
+    # enable it at boot
     echo "/swapfile swap swap defaults 0 0" >>$FSTAB
 }
 
@@ -655,13 +653,13 @@ rootfs_ask()
 
 
 rootfs_grow()
-{   
+{
     # Do we need to repartition?
     [ ! -e /.rootfs-repartition ] && return 0
 
     # Check for kernel cmdline parameter 'nofsresize'
     [ $(cat /proc/cmdline |grep -cim1 nofsresize) -eq 1 ] && return 0
-    
+
     if [ ! -e /.rootfs-grow ]; then
         # Grab required partition & block device information
         ROOT_PART=$(mount |grep 'on / type'|awk '{ print $1 }')
@@ -669,35 +667,31 @@ rootfs_grow()
         DEV_INFO=$(fdisk -l $BLK_DEV)
         PART_INFO=( $(echo "$DEV_INFO" |awk 'END{print}') )
         LAST_PART=$(echo ${PART_INFO[0]})    
-    
+
         if [ "$ROOT_PART" != "$LAST_PART" ]; then
             msg_box "Root partition $ROOT_PART is not the last partiton. Can not proceed."
             rm -f /.rootfs-repartition &>/dev/null
             return 0
         fi
-    
+
         SIZE_INFO=( $(echo "$DEV_INFO" |grep "Disk $BLK_DEV") )
         TOTAL_SECTS=$(echo ${SIZE_INFO[6]})
         START_SECT=$(echo ${PART_INFO[1]})
         END_SECT=$(echo ${PART_INFO[2]})
         PART_NUM=$(echo ${ROOT_PART//[!1-9]/})
         FREE_SECTS=$(($TOTAL_SECTS - $END_SECT))
-    
+
         # Ensure there is enough space to grow the root partition
         if [ $FREE_SECTS -lt 10 ]; then
             msg_box "Not enough space remaining on $ROOT_PART. The root parition can not be further expanded."
             rm -f /.rootfs-repartition &>/dev/null
             return 0
         fi
-    
-        #SECT_INFO=( $(echo "$DEV_INFO" |grep "Sector size") )
-        #SECT_SIZE=$(echo ${SECT_INFO[3]})
-        #msg_box "$(($FREE_SECTS - 1)) sectors available for root parition expansion.\nGrowing $ROOT_PART by $((($FREE_SECTS - 1) * $SECT_SIZE / 1024)) MB"
-    
+
         # Uggh! I know, this is an ugly hack but at the moment I just don't trust parted
         # to do the job on SD cards >=64GB. It seems to mess things up!
         echo -e "\np\nd\n$PART_NUM\nn\np\n$PART_NUM\n$START_SECT\n\nw"| fdisk $BLK_DEV &>/dev/null
-        
+
         touch /.rootfs-grow
         systemctl enable rootfs-grow.service &>/dev/null
         systemctl reboot &>/dev/null
@@ -705,6 +699,7 @@ rootfs_grow()
         ROOT_PART=$(mount |grep 'on / type'|awk '{ print $1 }')
         resize2fs $ROOT_PART &>/dev/null
         rm -f /.rootfs-grow /.rootfs-repartition &>/dev/null
+
         # Don't want it running every boot as its job is already done.
         systemctl disable rootfs-grow.service &>/dev/null
     fi
@@ -713,20 +708,20 @@ rootfs_grow()
 
 menu_kernel()
 {
-    #current running kernel
-    CUR_KERN=$(uname -r |sed 's/.fc23.armv7hl//')
-    
+    # current running kernel
+    CUR_KERN=$(uname -r |sed 's/.fc[0-9][0-9].armv7hl//')
+
     local MENU_TITLES=(
     "Current running kernel version: $CUR_KERN" "Select the kernel version for next boot:")
 
     local MENU_BUTTONS=("Select" "Cancel")
-    
-    #list installed kernels
-    read -ra KERNEL_LIST <<<$(ls $BOOT_DIR/vmlinuz* |sed -e 's|/boot/vmlinuz-||' -e 's|.fc23.armv7hl||')
+
+    # list installed kernels
+    read -ra KERNEL_LIST <<<$(ls $BOOT_DIR/vmlinuz* |sed -e 's|/boot/vmlinuz-||' -e 's|.fc[0-9][0-9].armv7hl||')
 
     local MENU_ITEMS
     declare -A MENU_ACTIONS
-    
+
     for i in `seq 1 ${#KERNEL_LIST[@]}`; do
         MENU_ITEMS=("${MENU_ITEMS[@]}" "$i. Kernel Version" "${KERNEL_LIST[$(($i-1))]}")
         MENU_ACTIONS["$i. Kernel Version"]="boot_kernel ${KERNEL_LIST[$(($i-1))]} ; break"
@@ -740,40 +735,40 @@ menu_swap()
 {
     local MENU_TITLES=(
     "Swap File Selection" "Choose required swap file size")
-    
+
     local MENU_BUTTONS=("Select" "Cancel")
-    
+
     local MENU_ITEMS=(
     "1. 256 MB " "Create and enable a 256MB swap file"
     "2. 512 MB " "Create and enable a 512MB swap file"
     "3. 1024 MB  " "Create and enable a 1024MB (1GB) swap file")
-    
+
     declare -A MENU_ACTIONS=(
     [${MENU_ITEMS[0]}]="swap_add 256 ; break"
     [${MENU_ITEMS[2]}]="swap_add 512 ; break"
     [${MENU_ITEMS[4]}]="swap_add 1024 ; break")
-    
+
     dialog_menu $MENU_ARGS
 }
 
 
 menu_rtc()
 {
-    #We don't have to enable i2c interface first here as the DTO should
-    #automatically enable it (refer: /boot/overlay/README)
+    # We don't have to enable i2c interface first here as the DTO should
+    # automatically enable it (refer: /boot/overlay/README)
     dto_ask i2c-rtc --no-reboot
-    
-    #check we haven't bailed or disabled the driver
+
+    # check we haven't bailed or disabled the driver
     [ $BAILED -eq 1 -o $DRV_DISABLED -eq 1 ] && break
-        
-    #ensure nortc is not in cmdline.txt
+
+    # ensure nortc is not in cmdline.txt
     sed -i 's/ nortc//' $CMD_TXT &>/dev/null
-    
+
     local MENU_TITLES=(
     "RTC Device Selection" "Choose your I2C Real Time Clock device")
 
     local MENU_BUTTONS=("Select" "Cancel")
-    
+
     local MENU_ITEMS=(
     "1. DS1307 " "Select the DS1307 device"
     "2. DS3231  " "Select the DS3231 device"
@@ -781,7 +776,7 @@ menu_rtc()
     "4. PCF2127 " "Select the PCF2127 device"
     "5. PCF8523 " "Select the PCF8523 device"
     "6. PCF8563 " "Select the PCF8563 device")
-    
+
     declare -A MENU_ACTIONS=(
     [${MENU_ITEMS[0]}]="dto_prm_update i2c-rtc ds1307 ; break"
     [${MENU_ITEMS[2]}]="dto_prm_update i2c-rtc ds3231 ; break"
@@ -789,9 +784,9 @@ menu_rtc()
     [${MENU_ITEMS[6]}]="dto_prm_update i2c-rtc pcf2127 ; break"
     [${MENU_ITEMS[8]}]="dto_prm_update i2c-rtc pcf8523 ; break"
     [${MENU_ITEMS[10]}]="dto_prm_update i2c-rtc pcf8563 ; break")
-    
+
     dialog_menu $MENU_ARGS
-    
+
     ask_reboot
 }
 
@@ -800,23 +795,23 @@ menu_drivers()
 {
     local MENU_TITLES=(
     "Enable or Disable System Drivers" "Choose an Option")
-    
+
     local MENU_BUTTONS=("Select" "Main Menu")
-    
+
     local MENU_ITEMS=(
     "1. Mesa DRM VC4" "Mesa/DRM VC4 driver for Rpi (Experimental)"
     "2. Pi Camera" "Enable or disable the RPi Camera"
     "3. LIRC RPi" "Linux Infrared Remote Control for the RPi (LIRC)"
     "4. I2C RTC" "Realtime Cock (RTC) support"
     "5. RPi3 Bluetooth" "RPi3 bluetooth support")
-    
+
     declare -A MENU_ACTIONS=(
     [${MENU_ITEMS[0]}]=mesa_vc4
     [${MENU_ITEMS[2]}]=pi_camera
     [${MENU_ITEMS[4]}]="dto_ask lirc-rpi"
     [${MENU_ITEMS[6]}]=menu_rtc
     [${MENU_ITEMS[8]}]="bt_ask")
-    
+
     dialog_menu $MENU_ARGS
 }
 
@@ -825,21 +820,21 @@ menu_params()
 {
     local MENU_TITLES=(
     "Enable or Disable Device Tree Paramters" "Choose an Option")
-    
+
     local MENU_BUTTONS=("Select" "Main Menu")
-    
+
     local MENU_ITEMS=(
     "1. I2C interface" "Inter-Integrated Circuit (i2c) interface"
     "2. I2S interface" "Inter-IC Sound, (i2s) interface"
     "3. SPI interface" "Serial Peripheral Interface"
     "4. Audio" "On-board ALSA audio interface")
-    
+
     declare -A MENU_ACTIONS=(
     [${MENU_ITEMS[0]}]="dtp_ask i2c"
     [${MENU_ITEMS[2]}]="dtp_ask i2s"
     [${MENU_ITEMS[4]}]="dtp_ask spi"
     [${MENU_ITEMS[6]}]="dtp_ask audio")
-    
+
     dialog_menu $MENU_ARGS
 }
 
@@ -847,9 +842,9 @@ menu_params()
 menu_main()
 {
     local MENU_TITLES=("System Configuration" "Choose an Option")
-    
+
     local MENU_BUTTONS=("Select" "Exit")
-    
+
     local MENU_ITEMS=(
     "1. Set Boot Kernel" "Select which kernel you want to use at boot"
     "2. DT Paramters" "Enable or disable Device Tree (DT) parameters"
@@ -857,7 +852,7 @@ menu_main()
     "4. Expand Root FS" "Expand (grow) root filesystem on SD card"
     "5. Add Swap File" "Add and enable a swap file"
     "6. About $NAME" "Information about this configuration utility")
-    
+
     declare -A MENU_ACTIONS=(
     [${MENU_ITEMS[0]}]=menu_kernel
     [${MENU_ITEMS[2]}]=menu_params
@@ -865,11 +860,8 @@ menu_main()
     [${MENU_ITEMS[6]}]=rootfs_ask
     [${MENU_ITEMS[8]}]=menu_swap
     [${MENU_ITEMS[10]}]=about)
-    
+
     dialog_menu $MENU_ARGS
-    
-    #clear screen & exit
-    clear; exit 0
 }
 
 
@@ -914,44 +906,42 @@ requires()
         echo "This script must be run as root user."
         exit 1
     fi
-    
-    
+
     if [[ $NO_DIALOG -eq 0 ]]; then
         # we require whiptail
         if [ ! -f /usr/bin/whiptail ]; then
-            echo "$NAME requires whiptail\n Please install"
-            #offer to install here?
+            echo "$NAME requires whiptail. Please install"
+            # offer to install here?
             exit 1
         fi
     fi
-
 }
 
 
 cmdline()
 {
     CMD_ARG=$2
-    
+
     if [[ "$CMD_ARG" == "" ]]; then
         echo "Missing argument"
         exit 0
     fi
-    
+
     # we don't want a dialog or questions
     NO_DIALOG=1
 
     # check for script run requirements
     requires
-    
+
     # check for & clean config.txt if necessary
     cfg_check
-    
+
     # exclude some special cases for the moment
     if [[ "$CMD_ARG" == "vc4-kms-v3d" ]] || [[ "$CMD_ARG" == "start_x" ]]; then
         echo "Enabling/disabling ${REF_NAMES[$CMD_ARG]} via cmdline is currently unsupported"
         exit 0
     fi
-    
+
     # weed out '-overlay' in dto names
     if [[ "$1" == "dto_enable" ]] || [[ "$1" == "dto_disable" ]]; then
         CMD_ARG=$(echo $CMD_ARG| sed 's/-overlay//')
@@ -968,12 +958,15 @@ main()
 
     # check for & clean config.txt if necessary
     cfg_check
-    
+
     # set WT dialog menu sizes
     dialog_size
-    
+
     # start main menu
     menu_main
+
+    # clear screen & exit
+    clear; exit 0
 }
 
 
