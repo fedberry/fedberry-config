@@ -44,6 +44,7 @@ declare -A DEF_VALS=(
 ### Name references for various DTOs, DTPs & config options 
 declare -A REF_NAMES=(
     [start_x]="RPi Camera"
+    [vc4-fkms-v3d]="VC4 Mesa/Dispmanx" 
     [vc4-kms-v3d]="VC4 Mesa" 
     [lirc-rpi]="RPi LIRC"
     [i2c-rtc]="I2C RTC"
@@ -97,8 +98,6 @@ ask_reboot()
             # add a timer option here to delay reboot by 5 secs?
             shutdown -r now
             exit 0
-        else
-            SGST_REBOOT=0
         fi
     fi
 }
@@ -269,8 +268,6 @@ dto_ask()
                 BAILED=1
             fi
         fi
-
-        [[ $NO_REBOOT -ne 1 ]] && [[ $SGST_REBOOT -eq 1 ]] && ask_reboot
     fi
 }
 
@@ -359,8 +356,6 @@ dtp_ask()
             BAILED=1
         fi
     fi
-
-    [[ $NO_REBOOT -ne 1 ]] && [[ $SGST_REBOOT -eq 1 ]] && ask_reboot
 }
 
 
@@ -449,8 +444,6 @@ config_ask()
             BAILED=1
         fi
     fi
-
-    [[ $NO_REBOOT -ne 1 ]] && [[ $SGST_REBOOT -eq 1 ]] && ask_reboot
 }
 
 
@@ -499,15 +492,13 @@ boot_kernel()
     cp -f $BOOT_DIR/$DTB_DIR/*.dtb $BOOT_DIR/ &>/dev/null
     SGST_REBOOT=1
 
-    # offer a reboot
-    ask_reboot "$1 will be used for the next boot"
+    msg_box "$1 will be used when next booting your RPi"
 }
 
 
-mesa_vc4()
+ask_vc4()
 {
-    msg_box "WARNING" "The Mesa VC4 driver is EXPERIMENTAL and a W.I.P. It will likely cause system instability."
-    dto_ask vc4-kms-v3d --no-reboot
+    dto_ask $1
     if [[ $BAILED -ne 1 ]] && [[ $NO_OVERLAY -ne 1 ]]; then
         if [[ $DRV_DISABLED -eq 1 ]]; then
             cfg_enable gpu_mem
@@ -515,25 +506,29 @@ mesa_vc4()
             cfg_disable gpu_mem
             # currently conflicts with pi camera requirements
             cfg_disable start_x
+            # the two vc4 overlays conflict with one another
+            if [ "$1" == "vc4-fkms-v3d" ]; then
+                dto_disable vc4-kms-v3d
+            elif [ "$1" == "vc4-kms-v3d" ]; then
+                dto_disable vc4-fkms-v3d
+            fi
         fi
     fi
-    ask_reboot
 }
 
 
 pi_camera()
 {
-    config_ask start_x --no-reboot
+    config_ask start_x
     if [[ $BAILED -ne 1 ]]; then
         if [[ $OPT_DISABLED -ne 1 ]]; then
             cfg_enable gpu_mem
             # currrently conflicts with the vc4 driver requirements
             dto_disable vc4-kms-v3d
-            cfg_disable avoid_warnings
+            dto_disable vc4-fkms-v3d
             [[ $CFG_VALUE -lt 128 ]] && cfg_val_update gpu_mem 128
         fi
     fi
-    ask_reboot
 }
 
 
@@ -546,8 +541,6 @@ bt_ask()
         yes_no "ENABLE RPi 3 Bluetooth" "Do you want to ENABLE bluetooth support for your RPi 3?"
         [ $? == 1 ] && return 0 || bt_enable
     fi
-
-    ask_reboot
 }
 
 
@@ -706,6 +699,27 @@ rootfs_grow()
 }
 
 
+menu_vc4()
+{
+    msg_box "WARNING" "The Mesa VC4 driver is EXPERIMENTAL and a W.I.P. It will likely cause system instability."
+
+    local MENU_TITLES=(
+    "VC4 Overlay Selection" "Choose the VC4 overlay to be used:")
+
+    local MENU_BUTTONS=("Select" "Cancel")
+
+    local MENU_ITEMS=(
+    "1. vc4-fkms-v3d " "DRM VC4 V3D driver using dispmanx display stack."
+    "2. vc4-kms-v3d " "DRM VC4 HDMI/HVS/V3D driver.")
+
+    declare -A MENU_ACTIONS=(
+    [${MENU_ITEMS[0]}]="ask_vc4 vc4-fkms-v3d ; break"
+    [${MENU_ITEMS[2]}]="ask_vc4 vc4-kms-v3d ; break")
+
+    dialog_menu $MENU_ARGS
+}
+
+
 menu_kernel()
 {
     # current running kernel
@@ -756,7 +770,7 @@ menu_rtc()
 {
     # We don't have to enable i2c interface first here as the DTO should
     # automatically enable it (refer: /boot/overlay/README)
-    dto_ask i2c-rtc --no-reboot
+    dto_ask i2c-rtc
 
     # check we haven't bailed or disabled the driver
     [ $BAILED -eq 1 -o $DRV_DISABLED -eq 1 ] && break
@@ -786,8 +800,6 @@ menu_rtc()
     [${MENU_ITEMS[10]}]="dto_prm_update i2c-rtc pcf8563 ; break")
 
     dialog_menu $MENU_ARGS
-
-    ask_reboot
 }
 
 
@@ -799,14 +811,14 @@ menu_drivers()
     local MENU_BUTTONS=("Select" "Main Menu")
 
     local MENU_ITEMS=(
-    "1. Mesa DRM VC4" "Mesa/DRM VC4 driver for Rpi (Experimental)"
+    "1. Mesa DRM VC4" "Mesa/DRM VC4 driver for RPi (Experimental)"
     "2. Pi Camera" "Enable or disable the RPi Camera"
     "3. LIRC RPi" "Linux Infrared Remote Control for the RPi (LIRC)"
     "4. I2C RTC" "Realtime Cock (RTC) support"
     "5. RPi3 Bluetooth" "RPi3 bluetooth support")
 
     declare -A MENU_ACTIONS=(
-    [${MENU_ITEMS[0]}]=mesa_vc4
+    [${MENU_ITEMS[0]}]=menu_vc4
     [${MENU_ITEMS[2]}]=pi_camera
     [${MENU_ITEMS[4]}]="dto_ask lirc-rpi"
     [${MENU_ITEMS[6]}]=menu_rtc
@@ -964,6 +976,9 @@ main()
 
     # start main menu
     menu_main
+
+    # if needed, offer a reboot
+    ask_reboot
 
     # clear screen & exit
     clear; exit 0
