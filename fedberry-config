@@ -12,7 +12,7 @@
 NAME=fedberry-config
 AUTHORS="Vaughan Agrez"
 YEAR=2016
-VERSION=0.3.2
+VERSION=0.3.3
 BUG_REPORTS="https://github.com/fedberry/fedberry-config"
 
 
@@ -23,6 +23,7 @@ CFG_TXT=$BOOT_DIR/config.txt
 CMD_TXT=$BOOT_DIR/cmdline.txt
 DTO_DIR=$BOOT_DIR/overlays
 FSTAB=$ETC_DIR/fstab
+SE_CFG=$ETC_DIR/selinux/config
 OS_RELEASE=$ETC_DIR/os-release
 
 
@@ -44,6 +45,7 @@ declare -A DEF_VALS=(
 ### Name references for various DTOs, DTPs & config options 
 declare -A REF_NAMES=(
     [start_x]="RPi Camera"
+    [vc4-fkms-v3d]="VC4 Mesa/Dispmanx" 
     [vc4-kms-v3d]="VC4 Mesa" 
     [lirc-rpi]="RPi LIRC"
     [i2c-rtc]="I2C RTC"
@@ -97,8 +99,6 @@ ask_reboot()
             # add a timer option here to delay reboot by 5 secs?
             shutdown -r now
             exit 0
-        else
-            SGST_REBOOT=0
         fi
     fi
 }
@@ -269,8 +269,6 @@ dto_ask()
                 BAILED=1
             fi
         fi
-
-        [[ $NO_REBOOT -ne 1 ]] && [[ $SGST_REBOOT -eq 1 ]] && ask_reboot
     fi
 }
 
@@ -359,8 +357,6 @@ dtp_ask()
             BAILED=1
         fi
     fi
-
-    [[ $NO_REBOOT -ne 1 ]] && [[ $SGST_REBOOT -eq 1 ]] && ask_reboot
 }
 
 
@@ -449,8 +445,6 @@ config_ask()
             BAILED=1
         fi
     fi
-
-    [[ $NO_REBOOT -ne 1 ]] && [[ $SGST_REBOOT -eq 1 ]] && ask_reboot
 }
 
 
@@ -499,15 +493,13 @@ boot_kernel()
     cp -f $BOOT_DIR/$DTB_DIR/*.dtb $BOOT_DIR/ &>/dev/null
     SGST_REBOOT=1
 
-    # offer a reboot
-    ask_reboot "$1 will be used for the next boot"
+    msg_box "$1 will be used when next booting your RPi"
 }
 
 
-mesa_vc4()
+ask_vc4()
 {
-    msg_box "WARNING" "The Mesa VC4 driver is EXPERIMENTAL and a W.I.P. It will likely cause system instability."
-    dto_ask vc4-kms-v3d --no-reboot
+    dto_ask $1
     if [[ $BAILED -ne 1 ]] && [[ $NO_OVERLAY -ne 1 ]]; then
         if [[ $DRV_DISABLED -eq 1 ]]; then
             cfg_enable gpu_mem
@@ -515,39 +507,41 @@ mesa_vc4()
             cfg_disable gpu_mem
             # currently conflicts with pi camera requirements
             cfg_disable start_x
+            # the two vc4 overlays conflict with one another
+            if [ "$1" == "vc4-fkms-v3d" ]; then
+                dto_disable vc4-kms-v3d
+            elif [ "$1" == "vc4-kms-v3d" ]; then
+                dto_disable vc4-fkms-v3d
+            fi
         fi
     fi
-    ask_reboot
 }
 
 
 pi_camera()
 {
-    config_ask start_x --no-reboot
+    config_ask start_x
     if [[ $BAILED -ne 1 ]]; then
         if [[ $OPT_DISABLED -ne 1 ]]; then
             cfg_enable gpu_mem
             # currrently conflicts with the vc4 driver requirements
             dto_disable vc4-kms-v3d
-            cfg_disable avoid_warnings
+            dto_disable vc4-fkms-v3d
             [[ $CFG_VALUE -lt 128 ]] && cfg_val_update gpu_mem 128
         fi
     fi
-    ask_reboot
 }
 
 
 bt_ask()
 {
     if hcitool dev |grep hci &>/dev/null || systemctl is-enabled brcm43438.service &>/dev/null; then 
-        yes_no "Disable RPi 3 Bluetooth" "Do you want to disable bluetooth support for your RPi 3?"
+        yes_no "DISABLE RPi 3 Bluetooth" "Do you want to DISABLE bluetooth support for your RPi 3?"
         [ $? == 1 ] && return 0 || bt_disable
     else
-        yes_no "Enable RPi 3 Bluetooth" "Do you want to enable bluetooth support for your RPi 3?"
+        yes_no "ENABLE RPi 3 Bluetooth" "Do you want to ENABLE bluetooth support for your RPi 3?"
         [ $? == 1 ] && return 0 || bt_enable
     fi
-
-    ask_reboot
 }
 
 
@@ -706,6 +700,119 @@ rootfs_grow()
 }
 
 
+selinux()
+{
+    SE_MODE=$(getenforce)
+    MSG_RLB="SELinux is now set to $1 mode.\n\nPlease reboot to enable SELinux & relabel the file system.\n\nPlease Note: Relabeling may take a long time, depending on file system size."
+
+    if [[ "$SE_MODE" == "Enforcing" ]]; then
+        if [[ "$1" == "enforcing" ]]; then
+            selinux_enable $1
+            msg_box "SELinux is set to $1 mode"
+        elif [[ "$1" == "permissive" ]]; then
+            setenforce 0
+            selinux_enable $1
+            msg_box "SELinux is now set to $1 mode"
+        elif [[ "$1" == "disabled" ]]; then
+            selinux_disable
+            SGST_REBOOT=1
+        fi
+    fi
+
+    if [[ "$SE_MODE" == "Permissive" ]]; then
+        if [[ "$1" == "enforcing" ]]; then
+            setenforce 1
+            selinux_enable $1
+            msg_box "SELinux is now set to $1 mode"
+        elif [[ "$1" == "permissive" ]]; then
+            selinux_enable $1
+            msg_box "SELinux is set to $1 mode"
+        elif [[ "$1" == "disabled" ]]; then
+            selinux_disable
+            SGST_REBOOT=1
+        fi
+    fi
+
+    if [[ "$SE_MODE" == "Disabled" ]]; then
+        if [[ "$1" == "enforcing" ]]; then
+            selinux_enable $1
+            msg_box "$MSG_RLB"
+            SGST_REBOOT=1
+        elif [[ "$1" == "permissive" ]]; then
+            selinux_enable $1
+            msg_box "$MSG_RLB"
+            SGST_REBOOT=1
+        elif [[ "$1" == "disabled" ]]; then
+            msg_box "SELinux is already disabled"
+            sed -i 's/^SELINUX=.*/SELINUX=disabled/' $SE_CFG
+            if ! grep -q "selinux=0" $CMD_TXT; then
+                sed -i '1s/$/ selinux=0/' $CMD_TXT
+            fi
+        fi
+    fi
+}
+
+
+selinux_disable()
+{
+    #Temporarily set permissive mode until selinux is disabled at next boot
+    setenforce 0
+    if ! grep -q "selinux=0" $CMD_TXT; then sed -i '1s/$/ selinux=0/' $CMD_TXT; fi
+    if grep -q "selinux=1" $CMD_TXT; then sed -i 's/selinux=1/selinux=0/' $CMD_TXT; fi
+    sed -i 's/^SELINUX=.*/SELINUX=disabled/' $SE_CFG
+    msg_box "SELinux has been disabled.\n\nPlease reboot your system to apply changes."
+}
+
+selinux_enable()
+{
+    sed -i 's/ selinux=0//' $CMD_TXT
+    sed -i "s/^SELINUX=.*/SELINUX=$1/" $SE_CFG
+}
+
+menu_selinux()
+{
+    selinux #get SE_MODE
+
+    local MENU_TITLES=(
+    "SELinux Status: $SE_MODE" "Choose SELinux Mode:")
+
+    local MENU_BUTTONS=("Select" "Cancel")
+
+    local MENU_ITEMS=(
+    "1. Set Enforcing Mode" "Security policy is enforced"
+    "2. Set Permissive Mode" "Print warnings instead of enforcing"
+    "3. Disable SELinux" "SELinux is Disabled")
+
+    declare -A MENU_ACTIONS=(
+    [${MENU_ITEMS[0]}]="selinux enforcing ; break"
+    [${MENU_ITEMS[2]}]="selinux permissive ; break"
+    [${MENU_ITEMS[4]}]="selinux disabled ; break")
+
+    dialog_menu $MENU_ARGS
+}
+
+
+menu_vc4()
+{
+    msg_box "WARNING" "The Mesa VC4 driver is EXPERIMENTAL and a W.I.P. It will likely cause system instability."
+
+    local MENU_TITLES=(
+    "VC4 Driver Selection" "Choose the VC4 driver stack:")
+
+    local MENU_BUTTONS=("Select" "Cancel")
+
+    local MENU_ITEMS=(
+    "1. VC4 V3D + DispmanX " "DRM VC4 V3D driver using dispmanx display stack"
+    "2. VC4 HDMI/HVS/V3D " "DRM VC4 HDMI/HVS/V3D driver")
+
+    declare -A MENU_ACTIONS=(
+    [${MENU_ITEMS[0]}]="ask_vc4 vc4-fkms-v3d ; break"
+    [${MENU_ITEMS[2]}]="ask_vc4 vc4-kms-v3d ; break")
+
+    dialog_menu $MENU_ARGS
+}
+
+
 menu_kernel()
 {
     # current running kernel
@@ -756,7 +863,7 @@ menu_rtc()
 {
     # We don't have to enable i2c interface first here as the DTO should
     # automatically enable it (refer: /boot/overlay/README)
-    dto_ask i2c-rtc --no-reboot
+    dto_ask i2c-rtc
 
     # check we haven't bailed or disabled the driver
     [ $BAILED -eq 1 -o $DRV_DISABLED -eq 1 ] && break
@@ -786,8 +893,6 @@ menu_rtc()
     [${MENU_ITEMS[10]}]="dto_prm_update i2c-rtc pcf8563 ; break")
 
     dialog_menu $MENU_ARGS
-
-    ask_reboot
 }
 
 
@@ -799,14 +904,14 @@ menu_drivers()
     local MENU_BUTTONS=("Select" "Main Menu")
 
     local MENU_ITEMS=(
-    "1. Mesa DRM VC4" "Mesa/DRM VC4 driver for Rpi (Experimental)"
+    "1. Mesa DRM VC4" "Mesa/DRM VC4 driver for RPi (Experimental)"
     "2. Pi Camera" "Enable or disable the RPi Camera"
     "3. LIRC RPi" "Linux Infrared Remote Control for the RPi (LIRC)"
     "4. I2C RTC" "Realtime Cock (RTC) support"
     "5. RPi3 Bluetooth" "RPi3 bluetooth support")
 
     declare -A MENU_ACTIONS=(
-    [${MENU_ITEMS[0]}]=mesa_vc4
+    [${MENU_ITEMS[0]}]=menu_vc4
     [${MENU_ITEMS[2]}]=pi_camera
     [${MENU_ITEMS[4]}]="dto_ask lirc-rpi"
     [${MENU_ITEMS[6]}]=menu_rtc
@@ -851,7 +956,8 @@ menu_main()
     "3. Hardware Support" "Enable or disable hardware support / drivers"
     "4. Expand Root FS" "Expand (grow) root filesystem on SD card"
     "5. Add Swap File" "Add and enable a swap file"
-    "6. About $NAME" "Information about this configuration utility")
+    "6. SELinux" "Configure SELinux options"
+    "7. About $NAME" "Information about this configuration utility")
 
     declare -A MENU_ACTIONS=(
     [${MENU_ITEMS[0]}]=menu_kernel
@@ -859,7 +965,8 @@ menu_main()
     [${MENU_ITEMS[4]}]=menu_drivers
     [${MENU_ITEMS[6]}]=rootfs_ask
     [${MENU_ITEMS[8]}]=menu_swap
-    [${MENU_ITEMS[10]}]=about)
+    [${MENU_ITEMS[10]}]=menu_selinux
+    [${MENU_ITEMS[12]}]=about)
 
     dialog_menu $MENU_ARGS
 }
@@ -894,6 +1001,7 @@ Configuration of various system wide options in FedBerry.
 --bt-enable                 Enable bluetooth support for RPi3
 --bt-disable                Disable bluetooth support for RPi3
 --add-swap <size in MB>     Add and enable a swap file
+--selinux <option>          Set SELinux mode (enforcing, permissive or disabled)
 --version                   Output version information and exit
 --help                      Display this help and exit"
 }
@@ -965,6 +1073,9 @@ main()
     # start main menu
     menu_main
 
+    # if needed, offer a reboot
+    ask_reboot
+
     # clear screen & exit
     clear; exit 0
 }
@@ -996,6 +1107,8 @@ case $1 in
         NO_DIALOG=1 bt_disable ;;
     "--add-swap")
         NO_DIALOG=1 swap_add $2;;
+    "--selinux")
+        NO_DIALOG=1 selinux $2;;
     "--help")
         usage ;;
     "--version")
