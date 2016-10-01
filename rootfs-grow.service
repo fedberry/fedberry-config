@@ -1,5 +1,6 @@
 [Unit]
 Description=Grow the root filesystem
+Before=initial-setup.service
 
 [Service]
 Environment=TERM=linux
@@ -10,4 +11,3 @@ RemainAfterExit=no
 
 [Install]
 WantedBy=multi-user.target
-
