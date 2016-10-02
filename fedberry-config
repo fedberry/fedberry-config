@@ -765,7 +765,7 @@ selinux_disable()
 
 selinux_enable()
 {
-    sed -i 's/ selinux=0//' $CMD_TXT
+    sed -i -e 's/ selinux=0//' -e 's/ audit=0//' $CMD_TXT
     sed -i "s/^SELINUX=.*/SELINUX=$1/" $SE_CFG
 }
 
