@@ -703,6 +703,13 @@ rootfs_grow()
 selinux()
 {
     SE_MODE=$(getenforce)
+
+    # Selinux-policy needs to be installed
+    if [ ! -e $SE_CFG ]; then
+        msg_box "selinux-policy is not installed. Can not enable selinux."
+        return 0
+    fi
+
     MSG_RLB="SELinux is now set to $1 mode.\n\nPlease reboot to enable SELinux & relabel the file system.\n\nPlease Note: Relabeling may take a long time, depending on file system size."
 
     if [[ "$SE_MODE" == "Enforcing" ]]; then
@@ -755,7 +762,7 @@ selinux()
 
 selinux_disable()
 {
-    #Temporarily set permissive mode until selinux is disabled at next boot
+    # Temporarily set permissive mode until selinux is disabled at next boot
     setenforce 0
     if ! grep -q "selinux=0" $CMD_TXT; then sed -i '1s/$/ selinux=0/' $CMD_TXT; fi
     if grep -q "selinux=1" $CMD_TXT; then sed -i 's/selinux=1/selinux=0/' $CMD_TXT; fi
@@ -771,7 +778,7 @@ selinux_enable()
 
 menu_selinux()
 {
-    selinux #get SE_MODE
+    selinux # Get SE_MODE
 
     local MENU_TITLES=(
     "SELinux Status: $SE_MODE" "Choose SELinux Mode:")
