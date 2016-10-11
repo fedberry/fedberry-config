@@ -2,8 +2,8 @@
 %define name    %{bname}-config
 
 Name:       %{name}
-Version:    0.3.3
-Release:    2%{?dist}
+Version:    0.3.5
+Release:    1%{?dist}
 License:    GPLv3+
 Summary:    Easy configuration of various system options in FedBerry
 Group:      Applications/System
@@ -75,6 +75,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Tue Oct 11 2016 Vaughan <vaughan at agrez dot net> 0.3.5-1
+- New release
+
 * Sat Oct 01 2016 Vaughan <vaughan at agrez dot net> 0.3.3-2
 - Ensure rootfs-grow.service executes before initial-setup.service
 
