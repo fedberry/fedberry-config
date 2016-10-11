@@ -1139,23 +1139,23 @@ main()
 
 case $1 in
     "--dto-enable")
-        cmdline dto_enable $2 ;;
+        cmdline dto_enable $2;;
     "--dto-disable")
-        cmdline dto_disable $2 ;;
+        cmdline dto_disable $2;;
     "--dtp-enable")
-        dtp_enable $2 ;;
+        dtp_enable $2;;
     "--dtp-disable")
-        dtp_disable $2 ;;
+        dtp_disable $2;;
     "--cfg-enable")
-        cmdline cfg_enable $2 ;;
+        cmdline cfg_enable $2;;
     "--cfg-disable")
-        cmdline cfg_enable $2 ;;
+        cmdline cfg_enable $2;;
     "--rootfs-grow")
-        NO_DIALOG=1 rootfs_grow ;;
+        NO_DIALOG=1 rootfs_grow;;
     "--bt-enable")
-        NO_DIALOG=1 bt_enable ;;
+        NO_DIALOG=1 bt_enable;;
     "--bt-disable")
-        NO_DIALOG=1 bt_disable ;;
+        NO_DIALOG=1 bt_disable;;
     "--add-swap")
         NO_DIALOG=1 swap_add $2;;
     "--selinux")
@@ -1163,11 +1163,11 @@ case $1 in
     "--sys-info")
         NO_DIALOG=1 show_info;;
     "--help")
-        usage ;;
+        usage;;
     "--version")
-        echo "$NAME - Version: $VERSION" ;;
+        echo "$NAME - Version: $VERSION";;
     "")
-        main ;;
+        main;;
     *)
-        echo "Unknown cmdline argument(s) $@" ;;
+        echo "Unknown cmdline argument(s) $@";;
 esac
