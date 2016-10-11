@@ -12,11 +12,11 @@
 NAME=fedberry-config
 AUTHORS="Vaughan Agrez"
 YEAR=2016
-VERSION=0.3.3
+VERSION=0.3.5
 BUG_REPORTS="https://github.com/fedberry/fedberry-config"
 
 
-### Environment variables
+### System config dirs & files
 BOOT_DIR=/boot
 ETC_DIR=/etc
 CFG_TXT=$BOOT_DIR/config.txt
@@ -25,6 +25,11 @@ DTO_DIR=$BOOT_DIR/overlays
 FSTAB=$ETC_DIR/fstab
 SE_CFG=$ETC_DIR/selinux/config
 OS_RELEASE=$ETC_DIR/os-release
+
+
+### OS environment
+OS_NAME=$(cat $OS_RELEASE |grep ^NAME= |sed 's/^.*=//')
+OS_VER_ID=$(cat $OS_RELEASE |grep ^VERSION_ID= |sed 's/^.*=//')
 
 
 ### Misc standard messages / args
@@ -69,7 +74,7 @@ msg_box()
             whiptail --msgbox --title "$1" "$2" 20 60
         fi
     else
-        echo -e "$1\n$2"
+        echo -e "$1\n\n$2"
     fi
 }
 
@@ -112,7 +117,7 @@ dialog_menu()
         local -n ITEMS=$3
         local -n ACTIONS=$4
 
-        DLG_CMD=(whiptail --title "${TITLE[0]}" --menu "${TITLE[1]}" --backtitle "$NAME - $VERSION" --ok-button "${BUTTONS[0]}" --cancel-button "${BUTTONS[1]}" $DLG_H $DLG_W $DLG_MH)
+        DLG_CMD=(whiptail --title "${TITLE[0]}" --menu "${TITLE[1]}" --backtitle "$OS_NAME - $OS_VER_ID" --ok-button "${BUTTONS[0]}" --cancel-button "${BUTTONS[1]}" $DLG_H $DLG_W $DLG_MH)
 
         SEL=$("${DLG_CMD[@]}" "${ITEMS[@]}" 3>&1 1>&2 2>&3)
         RETVAL=$?
@@ -480,9 +485,8 @@ cfg_val_update()
 
 boot_kernel()
 {
-    VERSION_ID=$(cat $OS_RELEASE |grep VERSION_ID |sed 's/VERSION_ID=//')
-    VMLINUZ=$(echo vmlinuz-$1.fc$VERSION_ID.armv7hl)
-    DTB_DIR=$(echo dtb-$1.fc$VERSION_ID.armv7hl)
+    VMLINUZ=$(echo vmlinuz-$1.fc$OS_VER_ID.armv7hl)
+    DTB_DIR=$(echo dtb-$1.fc$OS_VER_ID.armv7hl)
 
     # copy over desired kernel
     cp -f $BOOT_DIR/$VMLINUZ $BOOT_DIR/kernel7.img &>/dev/null
@@ -702,7 +706,15 @@ rootfs_grow()
 
 selinux()
 {
-    SE_MODE=$(getenforce)
+    # Get current selinux mode
+    sys_info
+
+    # Selinux-policy needs to be installed
+    if [ ! -e $SE_CFG ]; then
+        msg_box "selinux-policy is not installed. Can not enable selinux."
+        return 0
+    fi
+
     MSG_RLB="SELinux is now set to $1 mode.\n\nPlease reboot to enable SELinux & relabel the file system.\n\nPlease Note: Relabeling may take a long time, depending on file system size."
 
     if [[ "$SE_MODE" == "Enforcing" ]]; then
@@ -755,7 +767,7 @@ selinux()
 
 selinux_disable()
 {
-    #Temporarily set permissive mode until selinux is disabled at next boot
+    # Temporarily set permissive mode until selinux is disabled at next boot
     setenforce 0
     if ! grep -q "selinux=0" $CMD_TXT; then sed -i '1s/$/ selinux=0/' $CMD_TXT; fi
     if grep -q "selinux=1" $CMD_TXT; then sed -i 's/selinux=1/selinux=0/' $CMD_TXT; fi
@@ -765,13 +777,33 @@ selinux_disable()
 
 selinux_enable()
 {
-    sed -i 's/ selinux=0//' $CMD_TXT
+    sed -i -e 's/ selinux=0//' -e 's/ audit=0//' $CMD_TXT
     sed -i "s/^SELINUX=.*/SELINUX=$1/" $SE_CFG
 }
 
+
+show_info()
+{
+    sys_info
+
+    msg_box "System Information - $DATE_TIME" \
+"* OS INFORMATION *
+OS Release: $OS_NAME $OS_VER_ID
+SELinux Mode: $SE_MODE
+Running Kernel: $CUR_KERN
+Memory Free (kB): $MEM_FREE\n
+* HARDWARE INFORMATION *
+RPi Model: $RPI_MODEL
+CPU Temp: $CPU_TEMP C
+CPU Freq Current (MHz): $CPU_CUR
+CPU Freq Maximum (MHz): $CPU_MAX
+CPU Freq Minimum (MHz): $CPU_MIN"
+}
+
+
 menu_selinux()
 {
-    selinux #get SE_MODE
+    selinux # Get SE_MODE
 
     local MENU_TITLES=(
     "SELinux Status: $SE_MODE" "Choose SELinux Mode:")
@@ -815,8 +847,8 @@ menu_vc4()
 
 menu_kernel()
 {
-    # current running kernel
-    CUR_KERN=$(uname -r |sed 's/.fc[0-9][0-9].armv7hl//')
+    # get current running kernel version
+    sys_info
 
     local MENU_TITLES=(
     "Current running kernel version: $CUR_KERN" "Select the kernel version for next boot:")
@@ -957,7 +989,8 @@ menu_main()
     "4. Expand Root FS" "Expand (grow) root filesystem on SD card"
     "5. Add Swap File" "Add and enable a swap file"
     "6. SELinux" "Configure SELinux options"
-    "7. About $NAME" "Information about this configuration utility")
+    "7. System Info" "Show current system information"
+    "8. About $NAME" "Information about this configuration utility")
 
     declare -A MENU_ACTIONS=(
     [${MENU_ITEMS[0]}]=menu_kernel
@@ -966,7 +999,8 @@ menu_main()
     [${MENU_ITEMS[6]}]=rootfs_ask
     [${MENU_ITEMS[8]}]=menu_swap
     [${MENU_ITEMS[10]}]=menu_selinux
-    [${MENU_ITEMS[12]}]=about)
+    [${MENU_ITEMS[12]}]=show_info
+    [${MENU_ITEMS[14]}]=about)
 
     dialog_menu $MENU_ARGS
 }
@@ -1001,7 +1035,8 @@ Configuration of various system wide options in FedBerry.
 --bt-enable                 Enable bluetooth support for RPi3
 --bt-disable                Disable bluetooth support for RPi3
 --add-swap <size in MB>     Add and enable a swap file
---selinux <option>          Set SELinux mode (enforcing, permissive or disabled)
+--selinux <option>          Set SELinux mode (enforcing, permissive, disabled)
+--sys-info                  Show current system information
 --version                   Output version information and exit
 --help                      Display this help and exit"
 }
@@ -1023,6 +1058,24 @@ requires()
             exit 1
         fi
     fi
+}
+
+
+sys_info()
+{
+    # Hardware Info
+    # get cpuinfo_cur_freq 1st otherwise CPU speed jumps & always shows max_freq
+    CPU_CUR=$(($( </sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq)/1000))
+    CPU_MAX=$(($( </sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq)/1000))
+    CPU_MIN=$(($( </sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq)/1000))
+    CPU_TEMP=$(($( </sys/class/thermal/thermal_zone0/temp)/1000))
+    RPI_MODEL=$( </sys/firmware/devicetree/base/model)
+
+    # OS Info
+    DATE_TIME=$(date)
+    SE_MODE=$(getenforce)
+    CUR_KERN=$(uname -r |sed 's/.fc[0-9][0-9].armv7hl//')
+    MEM_FREE=$(cat /proc/meminfo |grep MemFree |awk '{ print $2 }')
 }
 
 
@@ -1088,33 +1141,35 @@ main()
 
 case $1 in
     "--dto-enable")
-        cmdline dto_enable $2 ;;
+        cmdline dto_enable $2;;
     "--dto-disable")
-        cmdline dto_disable $2 ;;
+        cmdline dto_disable $2;;
     "--dtp-enable")
-        dtp_enable $2 ;;
+        dtp_enable $2;;
     "--dtp-disable")
-        dtp_disable $2 ;;
+        dtp_disable $2;;
     "--cfg-enable")
-        cmdline cfg_enable $2 ;;
+        cmdline cfg_enable $2;;
     "--cfg-disable")
-        cmdline cfg_enable $2 ;;
+        cmdline cfg_enable $2;;
     "--rootfs-grow")
-        NO_DIALOG=1 rootfs_grow ;;
+        NO_DIALOG=1 rootfs_grow;;
     "--bt-enable")
-        NO_DIALOG=1 bt_enable ;;
+        NO_DIALOG=1 bt_enable;;
     "--bt-disable")
-        NO_DIALOG=1 bt_disable ;;
+        NO_DIALOG=1 bt_disable;;
     "--add-swap")
         NO_DIALOG=1 swap_add $2;;
     "--selinux")
         NO_DIALOG=1 selinux $2;;
+    "--sys-info")
+        NO_DIALOG=1 show_info;;
     "--help")
-        usage ;;
+        usage;;
     "--version")
-        echo "$NAME - Version: $VERSION" ;;
+        echo "$NAME - Version: $VERSION";;
     "")
-        main ;;
+        main;;
     *)
-        echo "Unknown cmdline argument(s) $@" ;;
+        echo "Unknown cmdline argument(s) $@";;
 esac
