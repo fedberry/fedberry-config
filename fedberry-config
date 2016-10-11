@@ -1092,9 +1092,6 @@ cmdline()
     # check for script run requirements
     requires
 
-    # gather system/hardware info
-    sys_info
-
     # check for & clean config.txt if necessary
     cfg_check
 
