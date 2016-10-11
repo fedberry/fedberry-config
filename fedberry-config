@@ -790,7 +790,8 @@ show_info()
 "* OS INFORMATION *
 OS Release: $OS_NAME $OS_VER_ID
 SELinux Mode: $SE_MODE
-Running Kernel: $CUR_KERN\n
+Running Kernel: $CUR_KERN
+Memory Free (kB): $MEM_FREE\n
 * HARDWARE INFORMATION *
 RPi Model: $RPI_MODEL
 CPU Temp: $CPU_TEMP C
@@ -1074,6 +1075,7 @@ sys_info()
     DATE_TIME=$(date)
     SE_MODE=$(getenforce)
     CUR_KERN=$(uname -r |sed 's/.fc[0-9][0-9].armv7hl//')
+    MEM_FREE=$(cat /proc/meminfo |grep MemFree |awk '{ print $2 }')
 }
 
 
