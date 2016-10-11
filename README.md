@@ -15,3 +15,7 @@ A utility for making common Raspberry Pi configuration changes via a simple menu
 * Add and enable swap files
 * Set SELinux modes (enforcing, permissive, disabled)
 * Show current system information
+
+---
+
+![screenshot](https://cloud.githubusercontent.com/assets/16171842/19257047/0ffa8e1e-8f9f-11e6-9cc8-cd3c1a84b03c.png)
