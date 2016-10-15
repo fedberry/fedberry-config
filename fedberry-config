@@ -706,8 +706,8 @@ rootfs_grow()
 
 selinux()
 {
-    # Get current selinux mode
-    sys_info
+    # if needed, get current selinux mode
+    [ ! -v SE_MODE ] && sys_info
 
     # Selinux-policy needs to be installed
     if [ ! -e $SE_CFG ]; then
