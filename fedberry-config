@@ -803,7 +803,7 @@ CPU Freq Minimum (MHz): $CPU_MIN"
 
 menu_selinux()
 {
-    selinux # Get SE_MODE
+    sys_info # Get SE_MODE
 
     local MENU_TITLES=(
     "SELinux Status: $SE_MODE" "Choose SELinux Mode:")
