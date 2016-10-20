@@ -658,9 +658,11 @@ rootfs_grow()
     # Check for kernel cmdline parameter 'nofsresize'
     [ $(cat /proc/cmdline |grep -cim1 nofsresize) -eq 1 ] && return 0
 
+    #Get root device
+    ROOT_PART=$(mount |awk '/on \/ type/ { print $1 }')
+    
     if [ ! -e /.rootfs-grow ]; then
         # Grab required partition & block device information
-        ROOT_PART=$(mount |grep 'on / type'|awk '{ print $1 }')
         BLK_DEV=$(echo ${ROOT_PART//[p,1-9]/})
         DEV_INFO=$(fdisk -l $BLK_DEV)
         PART_INFO=( $(echo "$DEV_INFO" |awk 'END{print}') )
@@ -694,7 +696,6 @@ rootfs_grow()
         systemctl enable rootfs-grow.service &>/dev/null
         systemctl reboot &>/dev/null
     else
-        ROOT_PART=$(mount |grep 'on / type'|awk '{ print $1 }')
         resize2fs $ROOT_PART &>/dev/null
         rm -f /.rootfs-grow /.rootfs-repartition &>/dev/null
 
@@ -1075,7 +1076,7 @@ sys_info()
     DATE_TIME=$(date)
     SE_MODE=$(getenforce)
     CUR_KERN=$(uname -r |sed 's/.fc[0-9][0-9].armv7hl//')
-    MEM_FREE=$(cat /proc/meminfo |grep MemFree |awk '{ print $2 }')
+    MEM_FREE=$(cat /proc/meminfo |awk /MemFree/ '{ print $2 }')
 }
 
 
