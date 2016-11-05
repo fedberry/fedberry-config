@@ -1076,7 +1076,7 @@ sys_info()
     DATE_TIME=$(date)
     SE_MODE=$(getenforce)
     CUR_KERN=$(uname -r |sed 's/.fc[0-9][0-9].armv7hl//')
-    MEM_FREE=$(cat /proc/meminfo |awk /MemFree/ '{ print $2 }')
+    MEM_FREE=$(cat /proc/meminfo |awk '/MemFree/ { print $2 }')
 }
 
 
