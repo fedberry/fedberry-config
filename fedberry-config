@@ -513,7 +513,7 @@ boot_kernel()
     fi
 
     SGST_REBOOT=1
-    msg_box "$1 will be used for the next boot"
+    msg_box "The $1 kernel will be used when $OS_NAME $OS_VER_ID is rebooted"
 }
 
 
