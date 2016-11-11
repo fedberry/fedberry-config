@@ -12,7 +12,7 @@
 NAME=fedberry-config
 AUTHORS="Vaughan Agrez"
 YEAR=2016
-VERSION=0.3.5
+VERSION=0.3.6
 BUG_REPORTS="https://github.com/fedberry/fedberry-config"
 
 
@@ -27,9 +27,11 @@ SE_CFG=$ETC_DIR/selinux/config
 OS_RELEASE=$ETC_DIR/os-release
 
 
-### OS environment
+### OS environment / hardware
+ARCH=$(arch| sed -r 's/([6-7])l/\1hl/')
 OS_NAME=$(cat $OS_RELEASE |grep ^NAME= |sed 's/^.*=//')
 OS_VER_ID=$(cat $OS_RELEASE |grep ^VERSION_ID= |sed 's/^.*=//')
+RPI_MODEL=$( </sys/firmware/devicetree/base/model)
 
 
 ### Misc standard messages / args
@@ -117,7 +119,7 @@ dialog_menu()
         local -n ITEMS=$3
         local -n ACTIONS=$4
 
-        DLG_CMD=(whiptail --title "${TITLE[0]}" --menu "${TITLE[1]}" --backtitle "$OS_NAME - $OS_VER_ID" --ok-button "${BUTTONS[0]}" --cancel-button "${BUTTONS[1]}" $DLG_H $DLG_W $DLG_MH)
+        DLG_CMD=(whiptail --title "${TITLE[0]}" --menu "${TITLE[1]}" --backtitle "$OS_NAME $OS_VER_ID ($ARCH)" --ok-button "${BUTTONS[0]}" --cancel-button "${BUTTONS[1]}" $DLG_H $DLG_W $DLG_MH)
 
         SEL=$("${DLG_CMD[@]}" "${ITEMS[@]}" 3>&1 1>&2 2>&3)
         RETVAL=$?
@@ -485,19 +487,33 @@ cfg_val_update()
 
 boot_kernel()
 {
-    VMLINUZ=$(echo vmlinuz-$1.fc$OS_VER_ID.armv7hl)
-    DTB_DIR=$(echo dtb-$1.fc$OS_VER_ID.armv7hl)
+    K_APPEND=$1.fc$OS_VER_ID.$ARCH
+    VMLINUZ=vmlinuz-$K_APPEND
+    KERNEL_DIR=/usr/lib/modules/$K_APPEND
+    if [ "$ARCH" == "armv7hl" ]; then
+        KERN_IMG=kernel7.img
+    else
+        KERN_IMG=kernel.img
+    fi
 
-    # copy over desired kernel
-    cp -f $BOOT_DIR/$VMLINUZ $BOOT_DIR/kernel7.img &>/dev/null
+    # clean overlay dir then copy required dtb files & kernel
+    if [ -d "$KERNEL_DIR/dtb" ]; then
+        rm -f $BOOT_DIR/overlays/* &>/dev/null
+        cp $KERNEL_DIR/dtb/overlays/* $BOOT_DIR/overlays/ &>/dev/null
+        cp -f $KERNEL_DIR/dtb/*.dtb $BOOT_DIR/ &>/dev/null
+        cp -f $KERNEL_DIR/vmlinuz $BOOT_DIR/$KERN_IMG &>/dev/null
+    elif [ -d "$BOOT_DIR/dtb-$K_APPEND" ]; then
+        rm -f $BOOT_DIR/overlays/* &>/dev/null
+        cp $BOOT_DIR/dtb-$K_APPEND/overlays/* $BOOT_DIR/overlays/ &>/dev/null
+        cp -f $BOOT_DIR/dtb-$K_APPEND/*.dtb $BOOT_DIR/ &>/dev/null
+        cp -f $BOOT_DIR/$VMLINUZ $BOOT_DIR/$KERN_IMG &>/dev/null
+    else
+        msg_box "ERROR:" "Can't find DTB dir for selected kernel. Aborting."
+        return 0
+    fi
 
-    # clean overlay dir then copy required dtb files
-    rm -f $BOOT_DIR/overlays/* &>/dev/null
-    cp $BOOT_DIR/$DTB_DIR/overlays/* $BOOT_DIR/overlays/ &>/dev/null
-    cp -f $BOOT_DIR/$DTB_DIR/*.dtb $BOOT_DIR/ &>/dev/null
     SGST_REBOOT=1
-
-    msg_box "$1 will be used when next booting your RPi"
+    msg_box "The $1 kernel will be used when $OS_NAME $OS_VER_ID is rebooted"
 }
 
 
@@ -658,9 +674,11 @@ rootfs_grow()
     # Check for kernel cmdline parameter 'nofsresize'
     [ $(cat /proc/cmdline |grep -cim1 nofsresize) -eq 1 ] && return 0
 
+    #Get root device
+    ROOT_PART=$(mount |awk '/on \/ type/ { print $1 }')
+    
     if [ ! -e /.rootfs-grow ]; then
         # Grab required partition & block device information
-        ROOT_PART=$(mount |grep 'on / type'|awk '{ print $1 }')
         BLK_DEV=$(echo ${ROOT_PART//[p,1-9]/})
         DEV_INFO=$(fdisk -l $BLK_DEV)
         PART_INFO=( $(echo "$DEV_INFO" |awk 'END{print}') )
@@ -694,7 +712,6 @@ rootfs_grow()
         systemctl enable rootfs-grow.service &>/dev/null
         systemctl reboot &>/dev/null
     else
-        ROOT_PART=$(mount |grep 'on / type'|awk '{ print $1 }')
         resize2fs $ROOT_PART &>/dev/null
         rm -f /.rootfs-grow /.rootfs-repartition &>/dev/null
 
@@ -706,8 +723,8 @@ rootfs_grow()
 
 selinux()
 {
-    # Get current selinux mode
-    sys_info
+    # if needed, get current selinux mode
+    [ ! -v SE_MODE ] && sys_info
 
     # Selinux-policy needs to be installed
     if [ ! -e $SE_CFG ]; then
@@ -788,7 +805,7 @@ show_info()
 
     msg_box "System Information - $DATE_TIME" \
 "* OS INFORMATION *
-OS Release: $OS_NAME $OS_VER_ID
+OS Release: $OS_NAME $OS_VER_ID ($ARCH)
 SELinux Mode: $SE_MODE
 Running Kernel: $CUR_KERN
 Memory Free (kB): $MEM_FREE\n
@@ -803,7 +820,7 @@ CPU Freq Minimum (MHz): $CPU_MIN"
 
 menu_selinux()
 {
-    selinux # Get SE_MODE
+    sys_info # Get SE_MODE
 
     local MENU_TITLES=(
     "SELinux Status: $SE_MODE" "Choose SELinux Mode:")
@@ -856,7 +873,7 @@ menu_kernel()
     local MENU_BUTTONS=("Select" "Cancel")
 
     # list installed kernels
-    read -ra KERNEL_LIST <<<$(ls $BOOT_DIR/vmlinuz* |sed -e 's|/boot/vmlinuz-||' -e 's|.fc[0-9][0-9].armv7hl||')
+    read -ra KERNEL_LIST <<<$(ls $BOOT_DIR/vmlinuz*.$ARCH |sed -e 's|/boot/vmlinuz-||' -e 's|.fc[0-9][0-9].'$ARCH'||')
 
     local MENU_ITEMS
     declare -A MENU_ACTIONS
@@ -1046,7 +1063,7 @@ requires()
 {
 
     if [ $UID != 0 ]; then
-        echo "This script must be run as root user."
+        echo "$NAME must be run as root user."
         exit 1
     fi
 
@@ -1069,13 +1086,12 @@ sys_info()
     CPU_MAX=$(($( </sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq)/1000))
     CPU_MIN=$(($( </sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq)/1000))
     CPU_TEMP=$(($( </sys/class/thermal/thermal_zone0/temp)/1000))
-    RPI_MODEL=$( </sys/firmware/devicetree/base/model)
 
     # OS Info
     DATE_TIME=$(date)
     SE_MODE=$(getenforce)
-    CUR_KERN=$(uname -r |sed 's/.fc[0-9][0-9].armv7hl//')
-    MEM_FREE=$(cat /proc/meminfo |grep MemFree |awk '{ print $2 }')
+    CUR_KERN=$(uname -r |sed 's/.fc[0-9][0-9].'$ARCH'//')
+    MEM_FREE=$(cat /proc/meminfo |awk '/MemFree/ { print $2 }')
 }
 
 
