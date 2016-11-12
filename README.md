@@ -1,5 +1,5 @@
 # fedberry-config
-A utility for making common Raspberry Pi configuration changes via a simple menu-driven interface or via command line switches. The majority of the configuration changes result in automated modifications to `/boot/config.txt`, `/boot/cmdline.txt` and/or other standard Fedora configuration files. Many options will require a reboot to take effect.
+A utility for making common FedBerry configuration changes via a simple menu-driven interface or via command line switches. The majority of the configuration changes result in automated modifications to `/boot/config.txt`, `/boot/cmdline.txt` and/or other standard Fedora configuration files. Many options will require a reboot to take effect.
 
 ## Main Features:
 * Enable / Disable Device Tree overlays
