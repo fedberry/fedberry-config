@@ -490,20 +490,35 @@ boot_kernel()
     K_APPEND=$1.fc$OS_VER_ID.$ARCH
     VMLINUZ=vmlinuz-$K_APPEND
     KERNEL_DIR=/usr/lib/modules/$K_APPEND
+    K_BCM27=$(echo $1 |grep -cim1 bcm27)
+
     if [ "$ARCH" == "armv7hl" ]; then
         KERN_IMG=kernel7.img
     else
         KERN_IMG=kernel.img
     fi
 
+    # remove any exisiting overlays
+    rm -f $BOOT_DIR/overlays/* &>/dev/null
+
+    # clean any exisitng dtb files in /boot
+    rm -f $BOOT_DIR/*.dtb
+
     # clean overlay dir then copy required dtb files & kernel
     if [ -d "$KERNEL_DIR/dtb" ]; then
-        rm -f $BOOT_DIR/overlays/* &>/dev/null
         cp $KERNEL_DIR/dtb/overlays/* $BOOT_DIR/overlays/ &>/dev/null
-        cp -f $KERNEL_DIR/dtb/*.dtb $BOOT_DIR/ &>/dev/null
+        if [ $K_BCM27 -eq 1 ]; then
+            if [ "$ARCH" == "armv7hl" ]; then
+                cp -f $KERNEL_DIR/dtb/bcm2709* $BOOT_DIR/ &>/dev/null
+                cp -f $KERNEL_DIR/dtb/bcm2710* $BOOT_DIR/ &>/dev/null
+            else
+                cp -f $KERNEL_DIR/dtb/bcm2708* $BOOT_DIR/ &>/dev/null
+            fi
+        else
+            cp -f $KERNEL_DIR/dtb/bcm28* $BOOT_DIR/ &>/dev/null
+        fi
         cp -f $KERNEL_DIR/vmlinuz $BOOT_DIR/$KERN_IMG &>/dev/null
     elif [ -d "$BOOT_DIR/dtb-$K_APPEND" ]; then
-        rm -f $BOOT_DIR/overlays/* &>/dev/null
         cp $BOOT_DIR/dtb-$K_APPEND/overlays/* $BOOT_DIR/overlays/ &>/dev/null
         cp -f $BOOT_DIR/dtb-$K_APPEND/*.dtb $BOOT_DIR/ &>/dev/null
         cp -f $BOOT_DIR/$VMLINUZ $BOOT_DIR/$KERN_IMG &>/dev/null
