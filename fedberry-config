@@ -650,10 +650,10 @@ swap_add()
 
     if [ $NO_DIALOG -eq 1 ]; then
         msg_box "$SWAP_MSG"
-        pv -p --size "$1"M /dev/zero | dd of=/swapfile bs=1k count="$1"k status=noxfer
+        pv -p --size "$1"M -S /dev/zero | dd of=/swapfile bs=1k count="$1"k status=noxfer
         mkswap /swapfile
     else
-        (pv -n --size "$1"M /dev/zero | dd of=/swapfile bs=1k count="$1"k status=noxfer && mkswap /swapfile) 2>&1 | dialog_prog "$SWAP_MSG"
+        (pv -n --size "$1"M -S /dev/zero | dd of=/swapfile bs=1k count="$1"k status=noxfer && mkswap /swapfile) 2>&1 | dialog_prog "$SWAP_MSG"
     fi
 
     # could we use fallocate here as its much faster? or will we end up with a sparse file?
