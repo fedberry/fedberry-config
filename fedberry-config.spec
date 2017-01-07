@@ -2,7 +2,7 @@
 %define name    %{bname}-config
 
 Name:       %{name}
-Version:    0.3.6
+Version:    0.3.7
 Release:    1%{?dist}
 License:    GPLv3+
 Summary:    Easy configuration of various system options in FedBerry
@@ -31,7 +31,7 @@ and/or other standard Fedora configuration files. Many options will require a re
 
 %prep
 %setup -c -T
-cp -a %{SOURCE0} %{SOURCE1} %{SOURCE2} %{SOURCE3} .
+cp -a %{sources} .
 
 
 %build
@@ -75,6 +75,10 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Sat Jan 07 2017 Vaughan <vaughan at agrez dot net> 0.3.7-1
+- New release
+- Simplify %%prep
+
 * Mon Nov 07 2016 Vaughan <vaughan at agrez dot net> 0.3.6-1
 - New release
 
