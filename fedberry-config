@@ -489,7 +489,13 @@ boot_kernel()
 {
     K_APPEND=$1.fc$OS_VER_ID.$ARCH
     VMLINUZ=vmlinuz-$K_APPEND
-    KERNEL_DIR=/usr/lib/modules/$K_APPEND
+    MODULES_DIR=/usr/lib/modules
+    KERNEL_DIR=$MODULES_DIR/$K_APPEND
+
+    # fallback for upgraded systems
+    if [ ! -d "$KERNEL_DIR" ]; then
+      KERNEL_DIR=`echo $MODULES_DIR/$1.fc*.$ARCH`
+    fi
 
     if [ "$ARCH" == "armv7hl" ]; then
         KERN_IMG=kernel7.img
