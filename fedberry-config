@@ -543,6 +543,15 @@ ask_vc4()
     if [[ $BAILED -ne 1 ]] && [[ $NO_OVERLAY -ne 1 ]]; then
         if [[ $DRV_DISABLED -eq 1 ]]; then
             cfg_enable gpu_mem
+            # check for & re-enable fbturbo driver if exists
+            if rpm -q xorg-x11-drv-fbturbo > /dev/null; then
+                FIND_FBTURBO=$(grep -Hs fbturbo /etc/X11/xorg.conf.d/*.bak)
+                if [ $? -eq 0 ]; then
+                    FBTURBO_BAK=$(echo $FIND_FBTURBO |sed 's|:.*||')
+                    FBTURBO_CONF=$(echo $FBTURBO_BAK |sed 's|\.bak||')
+                    mv -f $FBTURBO_BAK $FBTURBO_CONF
+                fi
+            fi
         else
             cfg_disable gpu_mem
             # currently conflicts with pi camera requirements
@@ -552,6 +561,12 @@ ask_vc4()
                 dto_disable vc4-kms-v3d
             elif [ "$1" == "vc4-kms-v3d" ]; then
                 dto_disable vc4-fkms-v3d
+            fi
+            # check fbturbo driver conf and disable if exists
+            FIND_FBTURBO=$(grep -Hs fbturbo /etc/X11/xorg.conf.d/*.conf)
+            if [ $? -eq 0 ]; then
+                FBTURBO_CONF=$(echo $FIND_FBTURBO |sed s'|:.*||')
+                mv -f $FBTURBO_CONF $FBTURBO_CONF.bak
             fi
         fi
     fi
