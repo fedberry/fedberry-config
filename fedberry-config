@@ -22,6 +22,7 @@ ETC_DIR=/etc
 CFG_TXT=$BOOT_DIR/config.txt
 CMD_TXT=$BOOT_DIR/cmdline.txt
 DTO_DIR=$BOOT_DIR/overlays
+MODULES_DIR=/usr/lib/modules
 FSTAB=$ETC_DIR/fstab
 SE_CFG=$ETC_DIR/selinux/config
 OS_RELEASE=$ETC_DIR/os-release
@@ -487,15 +488,8 @@ cfg_val_update()
 
 boot_kernel()
 {
-    K_APPEND=$1.fc$OS_VER_ID.$ARCH
-    VMLINUZ=vmlinuz-$K_APPEND
-    MODULES_DIR=/usr/lib/modules
-    KERNEL_DIR=$MODULES_DIR/$K_APPEND
-
-    # fallback for upgraded systems
-    if [ ! -d "$KERNEL_DIR" ]; then
-      KERNEL_DIR=`echo $MODULES_DIR/$1.fc*.$ARCH`
-    fi
+    VMLINUZ=vmlinuz-$1
+    KERNEL_DIR=$MODULES_DIR/$1
 
     if [ "$ARCH" == "armv7hl" ]; then
         KERN_IMG=kernel7.img
@@ -523,9 +517,9 @@ boot_kernel()
             cp -f $KERNEL_DIR/dtb/bcm28* $BOOT_DIR/ &>/dev/null
         fi
         cp -f $KERNEL_DIR/vmlinuz $BOOT_DIR/$KERN_IMG &>/dev/null
-    elif [ -d "$BOOT_DIR/dtb-$K_APPEND" ]; then
-        cp $BOOT_DIR/dtb-$K_APPEND/overlays/* $BOOT_DIR/overlays/ &>/dev/null
-        cp -f $BOOT_DIR/dtb-$K_APPEND/*.dtb $BOOT_DIR/ &>/dev/null
+    elif [ -d "$BOOT_DIR/dtb-$1" ]; then
+        cp $BOOT_DIR/dtb-$1/overlays/* $BOOT_DIR/overlays/ &>/dev/null
+        cp -f $BOOT_DIR/dtb-$1/*.dtb $BOOT_DIR/ &>/dev/null
         cp -f $BOOT_DIR/$VMLINUZ $BOOT_DIR/$KERN_IMG &>/dev/null
     else
         msg_box "ERROR:" "Can't find DTB dir for selected kernel. Aborting."
@@ -908,14 +902,14 @@ menu_kernel()
     local MENU_BUTTONS=("Select" "Cancel")
 
     # list installed kernels
-    read -ra KERNEL_LIST <<<$(ls $BOOT_DIR/vmlinuz*.$ARCH |sed -e 's|/boot/vmlinuz-||' -e 's|.fc[0-9][0-9].'$ARCH'||')
+    read -ra KERNEL_LIST <<<$(ls $MODULES_DIR)
 
     local MENU_ITEMS
     declare -A MENU_ACTIONS
 
     for i in `seq 1 ${#KERNEL_LIST[@]}`; do
-        MENU_ITEMS=("${MENU_ITEMS[@]}" "$i. Kernel Version" "${KERNEL_LIST[$(($i-1))]}")
-        MENU_ACTIONS["$i. Kernel Version"]="boot_kernel ${KERNEL_LIST[$(($i-1))]} ; break"
+        MENU_ITEMS=("${MENU_ITEMS[@]}" "$i. Kernel" "${KERNEL_LIST[$(($i-1))]}")
+        MENU_ACTIONS["$i. Kernel"]="boot_kernel ${KERNEL_LIST[$(($i-1))]} ; break"
     done
 
     dialog_menu $MENU_ARGS
