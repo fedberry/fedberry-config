@@ -491,39 +491,62 @@ boot_kernel()
     VMLINUZ=vmlinuz-$1
     KERNEL_DIR=$MODULES_DIR/$1
 
-    if [ "$ARCH" == "armv7hl" ]; then
-        KERN_IMG=kernel7.img
-    else
-        KERN_IMG=kernel.img
-    fi
-
-    # remove any exisiting overlays
-    rm -f $BOOT_DIR/overlays/* &>/dev/null
-
-    # clean any exisitng dtb files in /boot
-    rm -f $BOOT_DIR/*.dtb
-
-    # clean overlay dir then copy required dtb files & kernel
+    # find & set the kernel's dtb dir
     if [ -d "$KERNEL_DIR/dtb" ]; then
-        cp $KERNEL_DIR/dtb/overlays/* $BOOT_DIR/overlays/ &>/dev/null
-        if echo $1 |grep bcm27; then
-            if [ "$ARCH" == "armv7hl" ]; then
-                cp -f $KERNEL_DIR/dtb/bcm2709* $BOOT_DIR/ &>/dev/null
-                cp -f $KERNEL_DIR/dtb/bcm2710* $BOOT_DIR/ &>/dev/null
-            else
-                cp -f $KERNEL_DIR/dtb/bcm2708* $BOOT_DIR/ &>/dev/null
-            fi
-        else
-            cp -f $KERNEL_DIR/dtb/bcm28* $BOOT_DIR/ &>/dev/null
-        fi
-        cp -f $KERNEL_DIR/vmlinuz $BOOT_DIR/$KERN_IMG &>/dev/null
+        DTB_DIR=$KERNEL_DIR/dtb
     elif [ -d "$BOOT_DIR/dtb-$1" ]; then
-        cp $BOOT_DIR/dtb-$1/overlays/* $BOOT_DIR/overlays/ &>/dev/null
-        cp -f $BOOT_DIR/dtb-$1/*.dtb $BOOT_DIR/ &>/dev/null
-        cp -f $BOOT_DIR/$VMLINUZ $BOOT_DIR/$KERN_IMG &>/dev/null
+        DTB_DIR=$BOOT_DIR/dtb-$1
     else
         msg_box "ERROR:" "Can't find DTB dir for selected kernel. Aborting."
         return 0
+    fi
+
+    if [ "$ARCH" == "armv7hl" ]; then
+        KERN_IMG=$BOOT_DIR/kernel7.img
+    else
+        KERN_IMG=$BOOT_DIR/kernel.img
+    fi
+
+    # NOTE The vc_cma driver is used downstream but not upstream,
+    # making vc_cma_init a suitable predicate symbol.
+    if [ -f "$KERNEL_DIR/System.map" ]; then
+        KERN_DOWN=$(grep -cim1 vc_cma_init $KERNEL_DIR/System.map)
+    elif [ -f "$BOOT_DIR/System.map-$1" ]; then
+        KERN_DOWN=$(grep -cim1 vc_cma_init $BOOT_DIR/System.map-$1)
+    else
+        KERN_DOWN=0
+    fi
+
+    ### Clean and copy over dtb files
+    rm -f $BOOT_DIR/*.dtb
+
+    if [ $KERN_DOWN -eq 1 ] ; then
+        if [ "$ARCH" == "armv7hl" ]; then
+            cp -f $DTB_DIR/bcm2709* $BOOT_DIR/ &>/dev/null
+            cp -f $DTB_DIR/bcm2710* $BOOT_DIR/ &>/dev/null
+        else
+            # assume its armv6hl arch
+            cp -f $DTB_DIR/dtb/bcm2708* $BOOT_DIR/ &>/dev/null
+        fi
+    else
+        cp -f $DTB_DIR/dtb/bcm28* $BOOT_DIR/ &>/dev/null
+    fi
+
+    ### Copy selected kernel
+    if [ -f $KERNEL_DIR/vmlinuz ]; then
+        cp -f $KERNEL_DIR/vmlinuz $KERN_IMG &>/dev/null
+    elif [ -f $BOOT_DIR/$VMLINUZ ]; then
+        cp -f $BOOT_DIR/$VMLINUZ $KERN_IMG &>/dev/null
+    else
+        msg_box "ERROR:" "Can't find selected kernel image. Aborting."
+        return 0
+    fi
+
+    ### Clean and copy overlays for downstream/custom kerenls
+    rm -f $BOOT_DIR/overlays/* &>/dev/null
+
+    if [ -d "$DTB_DIR/overlays" ]; then
+        cp $DTB_DIR/overlays/* $BOOT_DIR/overlays/ &>/dev/null
     fi
 
     SGST_REBOOT=1
