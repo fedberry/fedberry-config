@@ -2,7 +2,7 @@
 %define name    %{bname}-config
 
 Name:       %{name}
-Version:    0.3.8
+Version:    0.3.9
 Release:    1%{?dist}
 License:    GPLv3+
 Summary:    Easy configuration of various system options in FedBerry
@@ -75,6 +75,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Fri Mar 17 2017 Vaughan <vaughan at agrez dot net> 0.3.9-1
+- New release
+
 * Wed Feb 15 2017 Vaughan <vaughan at agrez dot net> 0.3.8-1
 - New release
 
