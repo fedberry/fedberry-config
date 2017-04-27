@@ -1165,6 +1165,7 @@ Configuration of various system wide options in FedBerry.
 --bt-disable                Disable bluetooth support for RPi3
 --add-swap <size in MB>     Add and enable a swap file
 --selinux <option>          Set SELinux mode (enforcing, permissive, disabled)
+--bootsplash <option>       Plymouth graphical bootsplash (enable, disable)
 --sys-info                  Show current system information
 --version                   Output version information and exit
 --help                      Display this help and exit"
@@ -1290,6 +1291,8 @@ case $1 in
         NO_DIALOG=1 swap_add $2;;
     "--selinux")
         NO_DIALOG=1 selinux $2;;
+    "--bootsplash")
+        NO_DIALOG=1 bootsplash $2;;
     "--sys-info")
         NO_DIALOG=1 show_info;;
     "--help")
