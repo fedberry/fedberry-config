@@ -656,6 +656,28 @@ bt_disable()
 }
 
 
+bootsplash()
+{
+    SPLASH_OPTS="rhgb plymouth.ignore-serial-consoles logo.nologo"
+
+    if [ "$1" == "enable" ]; then
+        for i in $SPLASH_OPTS; do
+            if ! grep -q "$i" $CMD_TXT; then
+                sed -i "1s/$/ $i/" $CMD_TXT
+            fi
+        done
+        msg_box "Plymouth graphical bootsplash has been enabled."
+    elif [ "$1" == "disable" ]; then
+        for i in $SPLASH_OPTS; do
+            if grep -q "$i" $CMD_TXT; then
+                sed -i "s/ $i//" $CMD_TXT
+            fi
+        done
+        msg_box "Plymouth graphical bootsplash has been disabled."
+    fi
+}
+
+
 swap_add()
 {
     # we need an argument
@@ -867,6 +889,25 @@ CPU Temp: $CPU_TEMP C
 CPU Freq Current (MHz): $CPU_CUR
 CPU Freq Maximum (MHz): $CPU_MAX
 CPU Freq Minimum (MHz): $CPU_MIN"
+}
+
+
+menu_bootsplash()
+{
+    local MENU_TITLES=(
+    "Plymouth Bootsplash" "Choose Bootsplash Options")
+
+    local MENU_BUTTONS=("Select" "Cancel")
+
+    local MENU_ITEMS=(
+    "1. Enable Bootsplash " "Enable plymouth graphical bootsplash"
+    "2. Disable Bootsplash " "Disable plymouth graphical bootsplash")
+
+    declare -A MENU_ACTIONS=(
+    [${MENU_ITEMS[0]}]="bootsplash enable ; break"
+    [${MENU_ITEMS[2]}]="bootsplash disable ; break")
+
+    dialog_menu $MENU_ARGS
 }
 
 
