@@ -12,6 +12,7 @@ Source0:    https://raw.githubusercontent.com/%{bname}/%{name}/master/%{name}
 Source1:    https://raw.githubusercontent.com/%{bname}/%{name}/master/LICENSE
 Source2:    https://raw.githubusercontent.com/%{bname}/%{name}/master/README.md
 Source3:    https://raw.githubusercontent.com/%{bname}/%{name}/master/rootfs-grow.service
+Source4:    https://raw.githubusercontent.com/%{bname}/%{name}/master/%{name}.desktop
 BuildArch:  noarch
 Obsoletes:  rootfs-resize
 Conflicts:  rootfs-resize
@@ -49,6 +50,9 @@ rm -rf %{buildroot}
 %{__install} -d %{buildroot}/%{_unitdir}
 %{__install} -p rootfs-grow.service %{buildroot}/%{_unitdir}
 
+%{__install} -d %{buildroot}/%{_datadir}/applications
+%{__install} -p %{name}.desktop %{buildroot}/%{_datadir}/applications
+
 
 %clean
 rm -rf %{buildroot}
@@ -72,6 +76,7 @@ rm -rf %{buildroot}
 %license LICENSE
 %attr(0755,root,root) %{_sbindir}/%{name}
 %attr(0644,root,root) %{_unitdir}/rootfs-grow.service
+%attr(0755,root,root) %{_datadir}/applications/%{name}.desktop
 
 
 %changelog

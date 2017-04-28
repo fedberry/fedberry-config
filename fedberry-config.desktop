@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=FedBerry-Config
+Comment=Configure the Fedberry system
+Icon=configure
+Exec=pkexec fedberry-config
+Type=Application
+Categories=Settings;System;HardwareSettings;
+StartupNotify=true
+Terminal=true
+X-Desktop-File-Install-Version=0.23
