@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=FedBerry-Config
-Comment=Configure the Fedberry system
-Icon=configure
+Comment=Configure FedBerry system options
+Icon=preferences-other
 Exec=pkexec fedberry-config
 Type=Application
 Categories=Settings;System;HardwareSettings;
