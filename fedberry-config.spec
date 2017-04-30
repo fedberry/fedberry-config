@@ -3,7 +3,7 @@
 
 Name:       %{name}
 Version:    0.3.10
-Release:    1%{?dist}
+Release:    2%{?dist}
 License:    GPLv3+
 Summary:    Easy configuration of various system options in FedBerry
 Group:      Applications/System
@@ -80,6 +80,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Sun Apr 30 2017 Vaughan <vaughan at agrez dot net> 0.3.10-2
+- Update desktop file
+
 * Fri Apr 28 2017 Vaughan <vaughan at agrez dot net> 0.3.10-1
 - New release
 - Add desktop file
