@@ -1041,23 +1041,25 @@ menu_rtc()
 menu_drivers()
 {
     local MENU_TITLES=(
-    "Enable or Disable System Drivers" "Choose an Option")
+    "Configure System Drivers/Interfaces" "Choose an Option")
 
     local MENU_BUTTONS=("Select" "Main Menu")
 
     local MENU_ITEMS=(
-    "1. Mesa DRM VC4" "Mesa/DRM VC4 driver for RPi (Experimental)"
-    "2. Pi Camera" "Enable or disable the RPi Camera"
-    "3. LIRC RPi" "Linux Infrared Remote Control for the RPi (LIRC)"
-    "4. I2C RTC" "Realtime Cock (RTC) support"
-    "5. RPi3 Bluetooth" "RPi3 bluetooth support")
+    "1. HW Interfaces" "Configure various system hardware interfaces"
+    "2. Mesa DRM VC4" "Mesa/DRM VC4 driver for RPi (Experimental)"
+    "3. Pi Camera" "Enable/disable the RPi Camera"
+    "4. LIRC RPi" "Linux Infrared Remote Control for the RPi (LIRC)"
+    "5. I2C RTC" "Realtime Cock (RTC) support"
+    "6. RPi3 Bluetooth" "RPi3 bluetooth support")
 
     declare -A MENU_ACTIONS=(
-    [${MENU_ITEMS[0]}]=menu_vc4
-    [${MENU_ITEMS[2]}]=pi_camera
-    [${MENU_ITEMS[4]}]="dto_ask lirc-rpi"
-    [${MENU_ITEMS[6]}]=menu_rtc
-    [${MENU_ITEMS[8]}]="bt_ask")
+    [${MENU_ITEMS[0]}]=menu_params
+    [${MENU_ITEMS[2]}]=menu_vc4
+    [${MENU_ITEMS[4]}]=pi_camera
+    [${MENU_ITEMS[6]}]="dto_ask lirc-rpi"
+    [${MENU_ITEMS[8]}]=menu_rtc
+    [${MENU_ITEMS[10]}]="bt_ask")
 
     dialog_menu $MENU_ARGS
 }
@@ -1066,9 +1068,9 @@ menu_drivers()
 menu_params()
 {
     local MENU_TITLES=(
-    "Enable or Disable Device Tree Paramters" "Choose an Option")
+    "Enable/Disable Hardware Interfaces" "Choose an Option")
 
-    local MENU_BUTTONS=("Select" "Main Menu")
+    local MENU_BUTTONS=("Select" "Cancel")
 
     local MENU_ITEMS=(
     "1. I2C interface" "Inter-Integrated Circuit (i2c) interface"
@@ -1090,19 +1092,17 @@ menu_system()
 {
     local MENU_TITLES=("System Configuration" "Choose an Option")
 
-    local MENU_BUTTONS=("Select" "Exit")
+    local MENU_BUTTONS=("Select" "Main Menu")
 
     local MENU_ITEMS=(
     "1. Set Boot Kernel" "Select kernel to use for booting the system"
     "2. Bootsplash" "Enable/disable plymouth graphical bootsplash"
-    "3. DT Paramters" "Enable or disable Device Tree (DT) parameters"
-    "4. SELinux" "Configure SELinux options")
+    "3. SELinux" "Configure SELinux options")
 
     declare -A MENU_ACTIONS=(
     [${MENU_ITEMS[0]}]=menu_kernel
     [${MENU_ITEMS[2]}]=menu_bootsplash
-    [${MENU_ITEMS[4]}]=menu_params
-    [${MENU_ITEMS[6]}]=menu_selinux)
+    [${MENU_ITEMS[4]}]=menu_selinux)
 
     dialog_menu $MENU_ARGS
 }
@@ -1117,7 +1117,7 @@ menu_main()
 
     local MENU_ITEMS=(
     "1. System Configuration" "Configure various system options"
-    "2. Hardware/Driver Config" "Configure various hardware driver options"
+    "2. Drivers/Interfaces" "Configure system drivers/interfaces"
     "3. Expand Root FS" "Expand (grow) root filesystem on SD card"
     "4. Add Swap File" "Add and enable a swap file"
     "5. System Info" "Show current system information"
