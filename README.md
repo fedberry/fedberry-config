@@ -8,7 +8,7 @@ A utility for making common FedBerry configuration changes via a simple menu-dri
   * Mesa VC4 driver(s)
   * RPi Camera driver
   * Linux Infrared Remote Control (LIRC) support
-  * Realtime Cock (RTC) support
+  * Realtime Clock (RTC) support
   * Bluetooth support for RPi3
   * Sigma-Delta audio driver
 * Expand (grow) root filesystem on SD card
