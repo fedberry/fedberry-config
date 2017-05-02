@@ -10,10 +10,12 @@ A utility for making common FedBerry configuration changes via a simple menu-dri
   * Linux Infrared Remote Control (LIRC) support
   * Realtime Cock (RTC) support
   * Bluetooth support for RPi3
+  * Sigma-Delta audio driver
 * Expand (grow) root filesystem on SD card
 * Select which kernel you want to use at boot 
 * Add and enable swap files
 * Set SELinux modes (enforcing, permissive, disabled)
+* Enable / Disable plymouth graphical boot splash
 * Show current system information
 
 ## Screen Shots
