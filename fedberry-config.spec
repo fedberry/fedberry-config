@@ -13,6 +13,7 @@ Source1:    https://raw.githubusercontent.com/%{bname}/%{name}/master/LICENSE
 Source2:    https://raw.githubusercontent.com/%{bname}/%{name}/master/README.md
 Source3:    https://raw.githubusercontent.com/%{bname}/%{name}/master/rootfs-grow.service
 Source4:    https://raw.githubusercontent.com/%{bname}/%{name}/master/%{name}.desktop
+Source5:    https://raw.githubusercontent.com/%{bname}/%{name}/master/%{name}.svg
 BuildArch:  noarch
 Obsoletes:  rootfs-resize
 Conflicts:  rootfs-resize
@@ -53,6 +54,10 @@ rm -rf %{buildroot}
 %{__install} -d %{buildroot}/%{_datadir}/applications
 %{__install} -p %{name}.desktop %{buildroot}/%{_datadir}/applications
 
+%{__install} -d %{buildroot}/%{_datadir}/icons/hicolor/scalable/apps
+%{__install} -p %{name}.svg %{buildroot}/%{_datadir}/icons/hicolor/scalable/apps
+
+
 
 %clean
 rm -rf %{buildroot}
@@ -60,6 +65,8 @@ rm -rf %{buildroot}
 
 %post
 %systemd_post rootfs-grow.service
+touch --no-create %{_datadir}/icons/hicolor || :
+%{_bindir}/gtk-update-icon-cache --quiet %{_datadir}/icons/hicolor || :
 
 
 %preun
@@ -68,6 +75,8 @@ rm -rf %{buildroot}
 
 %postun
 %systemd_postun rootfs-grow.service
+touch --no-create %{_datadir}/icons/hicolor || :
+%{_bindir}/gtk-update-icon-cache --quiet %{_datadir}/icons/hicolor || :
 
 
 %files
@@ -77,6 +86,7 @@ rm -rf %{buildroot}
 %attr(0755,root,root) %{_sbindir}/%{name}
 %attr(0644,root,root) %{_unitdir}/rootfs-grow.service
 %attr(0755,root,root) %{_datadir}/applications/%{name}.desktop
+%attr(0755,root,root) %{_datadir}/icons/hicolor/scalable/apps/%{name}.svg
 
 
 %changelog
