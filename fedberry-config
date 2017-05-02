@@ -678,6 +678,11 @@ bootsplash()
 {
     SPLASH_OPTS="rhgb plymouth.ignore-serial-consoles logo.nologo"
 
+    if [ $OS_VER_ID -lt 25 ]; then
+        msg_box "Plymouth Graphical Bootsplash" "Plymouth graphical bootsplash is currently unsupported in FedBerry $OS_VER_ID"
+        return 0
+    fi
+
     if [ "$1" == "enable" ]; then
         for i in $SPLASH_OPTS; do
             if ! grep -q "$i" $CMD_TXT; then
