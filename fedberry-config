@@ -48,6 +48,8 @@ declare -A DEF_VALS=(
     [i2s]=on
     [spi]=on
     [audio]=on
+    [audio_pwm_mode]=2
+    [disable_audio_dither]=1
     )
 
 ### Name references for various DTOs, DTPs & config options 
@@ -61,6 +63,7 @@ declare -A REF_NAMES=(
     [i2s]="I2S interface"
     [spi]="SPI interface" 
     [audio]="Alsa audio interface"
+    [audio_pwm_mode]="Sigma-Delta audio driver"
     )
 
 
@@ -656,6 +659,21 @@ bt_disable()
 }
 
 
+audio_pwm_mode()
+{
+    msg_box "Sigma-Delta Audio Driver" "The sigma-delta audio driver is an EXPERIMENTAL analogue audio driver that significantly improves sound quality from the 3.5mm audio jack.\n\nFor more information please read:\n\nhttps://www.raspberrypi.org/forums/viewtopic.php?f=29&t=136445"
+
+    config_ask audio_pwm_mode
+    if [[ $BAILED -ne 1 ]]; then
+        if [[ $OPT_DISABLED -ne 1 ]]; then
+            cfg_enable disable_audio_dither
+        else
+            cfg_disable disable_audio_dither
+        fi
+    fi
+}
+
+
 bootsplash()
 {
     SPLASH_OPTS="rhgb plymouth.ignore-serial-consoles logo.nologo"
@@ -1051,7 +1069,8 @@ menu_drivers()
     "3. Pi Camera" "Enable/disable the RPi Camera"
     "4. LIRC RPi" "Linux Infrared Remote Control for the RPi (LIRC)"
     "5. I2C RTC" "Realtime Cock (RTC) support"
-    "6. RPi3 Bluetooth" "RPi3 bluetooth support")
+    "6. RPi3 Bluetooth" "RPi3 bluetooth support"
+    "7. Audio Driver" "Enable/disable sigma-delta audio driver (Experimental)")
 
     declare -A MENU_ACTIONS=(
     [${MENU_ITEMS[0]}]=menu_params
@@ -1059,7 +1078,8 @@ menu_drivers()
     [${MENU_ITEMS[4]}]=pi_camera
     [${MENU_ITEMS[6]}]="dto_ask lirc-rpi"
     [${MENU_ITEMS[8]}]=menu_rtc
-    [${MENU_ITEMS[10]}]="bt_ask")
+    [${MENU_ITEMS[10]}]="bt_ask"
+    [${MENU_ITEMS[12]}]=audio_pwm_mode)
 
     dialog_menu $MENU_ARGS
 }
