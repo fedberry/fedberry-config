@@ -2,8 +2,8 @@
 %define name    %{bname}-config
 
 Name:       %{name}
-Version:    0.3.10
-Release:    2%{?dist}
+Version:    0.3.11
+Release:    1%{?dist}
 License:    GPLv3+
 Summary:    Easy configuration of various system options in FedBerry
 Group:      Applications/System
@@ -80,8 +80,7 @@ touch --no-create %{_datadir}/icons/hicolor || :
 
 
 %files
-%doc README.md
-%doc README.html
+%doc README.md README.html
 %license LICENSE
 %attr(0755,root,root) %{_sbindir}/%{name}
 %attr(0644,root,root) %{_unitdir}/rootfs-grow.service
@@ -90,6 +89,10 @@ touch --no-create %{_datadir}/icons/hicolor || :
 
 
 %changelog
+* Tue May 02 2017 Vaughan <vaughan at agrez dot net> 0.3.11-1
+- New release
+- Add custom icon
+
 * Sun Apr 30 2017 Vaughan <vaughan at agrez dot net> 0.3.10-2
 - Update desktop file
 
