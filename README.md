@@ -19,8 +19,8 @@ A utility for making common FedBerry configuration changes via a simple menu-dri
 * Show current system information
 
 ## Screen Shots
-### Menu Interface
-![menu](https://cloud.githubusercontent.com/assets/16171842/19257047/0ffa8e1e-8f9f-11e6-9cc8-cd3c1a84b03c.png "Menu Interface")
+### Main Menu
+![menu](https://cloud.githubusercontent.com/assets/16171842/26089234/b4f1b0a2-3a2e-11e7-8561-ba7f71e26d5a.png "Menu Interface")
 
 ### Command Line Options
 ![cmdline](https://cloud.githubusercontent.com/assets/16171842/26089163/26b20832-3a2e-11e7-8817-6099943bb2aa.png "Command Line Options")
