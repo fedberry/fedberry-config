@@ -23,4 +23,4 @@ A utility for making common FedBerry configuration changes via a simple menu-dri
 ![menu](https://cloud.githubusercontent.com/assets/16171842/19257047/0ffa8e1e-8f9f-11e6-9cc8-cd3c1a84b03c.png "Menu Interface")
 
 ### Command Line Options
-![cmdline](https://cloud.githubusercontent.com/assets/16171842/20204883/9619a98a-a80e-11e6-82bc-a5400a4defb0.png "Command Line Options")
+![cmdline](https://cloud.githubusercontent.com/assets/16171842/26089163/26b20832-3a2e-11e7-8817-6099943bb2aa.png "Command Line Options")
