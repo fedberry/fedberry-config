@@ -20,7 +20,10 @@ A utility for making common FedBerry configuration changes via a simple menu-dri
 
 ## Screen Shots
 ### Main Menu
-![menu](https://cloud.githubusercontent.com/assets/16171842/26089234/b4f1b0a2-3a2e-11e7-8561-ba7f71e26d5a.png "Menu Interface")
+![main_menu](https://cloud.githubusercontent.com/assets/16171842/26089234/b4f1b0a2-3a2e-11e7-8561-ba7f71e26d5a.png "Main Menu")
+
+### Drivers Menu
+![drivers_menu](https://cloud.githubusercontent.com/assets/16171842/26089288/1ce2f464-3a2f-11e7-80df-a5ad5f72389b.png "Drivers Menu")
 
 ### Command Line Options
 ![cmdline](https://cloud.githubusercontent.com/assets/16171842/26089163/26b20832-3a2e-11e7-8817-6099943bb2aa.png "Command Line Options")
