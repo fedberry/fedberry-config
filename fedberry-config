@@ -40,7 +40,7 @@ TXT_ENB="is currently ENABLED in $CFG_TXT\n\nDo you want to DISABLE it?"
 TXT_DIS="is currently DISABLED in $CFG_TXT\n\nDo you want to ENABLE it?"
 MENU_ARGS="MENU_TITLES MENU_BUTTONS MENU_ITEMS MENU_ACTIONS"
 
-### Default DTP & config opt values 
+### Default DTP & config opt values
 declare -A DEF_VALS=(
     [gpu_mem]=32
     [start_x]=0
@@ -52,16 +52,16 @@ declare -A DEF_VALS=(
     [disable_audio_dither]=1
     )
 
-### Name references for various DTOs, DTPs & config options 
+### Name references for various DTOs, DTPs & config options
 declare -A REF_NAMES=(
     [start_x]="RPi Camera"
-    [vc4-fkms-v3d]="VC4 Mesa/Dispmanx" 
-    [vc4-kms-v3d]="VC4 Mesa" 
+    [vc4-fkms-v3d]="VC4 Mesa/Dispmanx"
+    [vc4-kms-v3d]="VC4 Mesa"
     [lirc-rpi]="RPi LIRC"
     [i2c-rtc]="I2C RTC"
-    [i2c]="I2C interface" 
+    [i2c]="I2C interface"
     [i2s]="I2S interface"
-    [spi]="SPI interface" 
+    [spi]="SPI interface"
     [audio]="Alsa audio interface"
     [audio_pwm_mode]="Sigma-Delta audio driver"
     )
