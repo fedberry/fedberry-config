@@ -33,7 +33,7 @@ ARCH=$(arch| sed -r 's/([6-7])l/\1hl/')
 OS_NAME=$(awk -F= '/^NAME=/ { print $2 }' $OS_RELEASE)
 OS_VER_ID=$(awk -F= '/^VERSION_ID/ { print $2 }' $OS_RELEASE)
 RPI_MODEL=$( </sys/firmware/devicetree/base/model)
-
+BOARD_REV=$(awk '/Revision/ { print $3 }' /proc/cpuinfo)
 
 ### Misc standard messages / args
 TXT_ENB="is currently ENABLED in $CFG_TXT\n\nDo you want to DISABLE it?"
@@ -64,6 +64,17 @@ declare -A REF_NAMES=(
     [spi]="SPI interface"
     [audio]="Alsa audio interface"
     [audio_pwm_mode]="Sigma-Delta audio driver"
+    )
+
+### Board manufacturing information
+declare -A MFG_INFO=(
+    [a01040]="Sony, UK"
+    [a01041]="Sony, UK"
+    [a21041]="Embest, China"
+    [a22042]="Embest, China"
+    [a02082]="Sony, UK"
+    [a22082]="Embest, China"
+    [a32082]="Sony, Japan"
     )
 
 
@@ -905,9 +916,11 @@ show_info()
 OS Release: $OS_NAME $OS_VER_ID ($ARCH)
 SELinux Mode: $SE_MODE
 Running Kernel: $CUR_KERN
-Memory Free (kB): $MEM_FREE\n
-* HARDWARE INFORMATION *
-RPi Model: $RPI_MODEL
+Memory Free (kB): $MEM_FREE
+Memory Available (kB): $MEM_AVLB
+\n* HARDWARE INFORMATION *
+Model: $RPI_MODEL
+Revision: $BOARD_REV (${MFG_INFO[$BOARD_REV]})
 CPU Temp: $CPU_TEMP C
 CPU Freq Current (MHz): $CPU_CUR
 CPU Freq Maximum (MHz): $CPU_MAX
@@ -1230,6 +1243,7 @@ sys_info()
     SE_MODE=$(getenforce)
     CUR_KERN=$(uname -r |sed 's/.fc[0-9][0-9].'$ARCH'//')
     MEM_FREE=$(awk '/MemFree/ { print $2 }' /proc/meminfo)
+    MEM_AVLB=$(awk '/MemAvailable/ { print $2 }' /proc/meminfo)
 }
 
 
