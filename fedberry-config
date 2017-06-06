@@ -30,8 +30,8 @@ OS_RELEASE=$ETC_DIR/os-release
 
 ### OS environment / hardware
 ARCH=$(arch| sed -r 's/([6-7])l/\1hl/')
-OS_NAME=$(cat $OS_RELEASE |grep ^NAME= |sed 's/^.*=//')
-OS_VER_ID=$(cat $OS_RELEASE |grep ^VERSION_ID= |sed 's/^.*=//')
+OS_NAME=$(awk -F= '/^NAME=/ { print $2 }' $OS_RELEASE)
+OS_VER_ID=$(awk -F= '/^VERSION_ID/ { print $2 }' $OS_RELEASE)
 RPI_MODEL=$( </sys/firmware/devicetree/base/model)
 
 
@@ -1229,7 +1229,7 @@ sys_info()
     DATE_TIME=$(date)
     SE_MODE=$(getenforce)
     CUR_KERN=$(uname -r |sed 's/.fc[0-9][0-9].'$ARCH'//')
-    MEM_FREE=$(cat /proc/meminfo |awk '/MemFree/ { print $2 }')
+    MEM_FREE=$(awk '/MemFree/ { print $2 }' /proc/meminfo)
 }
 
 
