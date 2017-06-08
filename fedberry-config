@@ -521,12 +521,12 @@ boot_kernel()
         KERN_IMG=$BOOT_DIR/kernel.img
     fi
 
-    # NOTE The vc_cma driver is used downstream but not upstream,
-    # making vc_cma_init a suitable predicate symbol.
+    # NOTE The bcm2708_fb driver is used downstream but not upstream,
+    # making it a suitable predicate symbol.
     if [ -f "$KERNEL_DIR/System.map" ]; then
-        KERN_DOWN=$(grep -cim1 vc_cma_init $KERNEL_DIR/System.map)
+        KERN_DOWN=$(grep -cim1 bcm2708_fb $KERNEL_DIR/System.map)
     elif [ -f "$BOOT_DIR/System.map-$1" ]; then
-        KERN_DOWN=$(grep -cim1 vc_cma_init $BOOT_DIR/System.map-$1)
+        KERN_DOWN=$(grep -cim1 bcm2708_fb $BOOT_DIR/System.map-$1)
     else
         KERN_DOWN=0
     fi
