@@ -347,10 +347,10 @@ dtp_write()
 dyn_dto_add()
 {
     # Sometimes we don't want DTO's loaded dynamically (eg. vc4!)
-    [ $DYN_DTO == "false" ] && return 0
+    [ "$DYN_DTO" == "false" ] && return 0
 
     # 1st arg = DTO name; 2nd arg = new parameter
-    if [ $2 != "" ]; then
+    if [ "$2" != "" ]; then
         if ! dtoverlay -l |grep -c "$2" &>/dev/null; then
             dtoverlay $1 $2 &>/dev/null
         fi
