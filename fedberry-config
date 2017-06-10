@@ -229,19 +229,29 @@ dto_write()
     if [ $1 == "enable" ]; then
         dtree_enable
         sed -i "s/^#$DTO/$DTO/" $CFG_TXT
+        dyn_dto_add $2
     elif [ $1 == "add" ]; then
         dtree_enable
         echo -e "$DTO" >> $CFG_TXT
+        dyn_dto_add $2
     elif [ $1 == "disable" ]; then
         sed -i "s/^$DTO/#$DTO/" $CFG_TXT
+        dyn_dto_rem $2
     fi
 }
 
 
 dto_prm_update()
 {
-    # 1st arg = DTO name; 2nd arg = new parameter value
-    sed -i "s/^dtoverlay=$1.*$/dtoverlay=$1,$2/" $CFG_TXT
+    # 1st arg = DTO name; 2nd arg = new parameter; 3rd arg = new value
+    if [ $3 != "" ]; then
+        sed -i "s/^dtoverlay=$1.*$/dtoverlay=$1,$2=$3/" $CFG_TXT
+    elif [ $2 != "" ]; then
+        sed -i "s/^dtoverlay=$1.*$/dtoverlay=$1,$2/" $CFG_TXT
+        dyn_dto_add $1 $2
+    else
+        dyn_dto_add $1
+    fi
 }
 
 
@@ -266,9 +276,9 @@ dto_ask()
             # DTO is enabled already
             yes_no "${REF_NAMES[$1]} $TXT_ENB"
             if [ $? -eq 0 ]; then
-                dto_write disable $1
                 SGST_REBOOT=1
                 DRV_DISABLED=1
+                dto_write disable $1
             else
                 BAILED=1
             fi
@@ -276,8 +286,8 @@ dto_ask()
             # DTO is disabled
             yes_no "${REF_NAMES[$1]} $TXT_DIS"
             if [ $? -eq 0 ]; then
-                dto_write enable $1
                 SGST_REBOOT=1
+                dto_write enable $1
             else
                 BAILED=1
             fi
@@ -285,8 +295,8 @@ dto_ask()
             # no DTO ref exists, add the requested DTO
             yes_no "${REF_NAMES[$1]} $TXT_DIS"
             if [ $? -eq 0 ]; then
-                dto_write add $1
                 SGST_REBOOT=1
+                dto_write add $1
             else
                 BAILED=1
             fi
@@ -335,6 +345,39 @@ dtp_write()
         echo "dtparam=$2=${DEF_VALS[$2]}" >> $CFG_TXT
     elif [ $1 == "disable" ]; then
         sed -i "s/^dtparam=$2/#dtparam=$2/" $CFG_TXT
+    fi
+}
+
+
+dyn_dto_add()
+{
+    # Sometimes we don't want DTO's loaded dynamically (eg. vc4!)
+    [ $DYN_DTO == "false" ] && return 0
+
+    # 1st arg = DTO name; 2nd arg = new parameter
+    if [ $2 != "" ]; then
+        if ! dtoverlay -l |grep -c "$2" &>/dev/null; then
+            dtoverlay $1 $2 &>/dev/null
+        fi
+    else
+        if ! dtoverlay -l |grep -c "$1" &>/dev/null; then
+            dtoverlay $1 &>/dev/null
+        fi
+    fi
+
+    # If dynamically loading the DTO is successful,
+    # don't suggest a reboot
+    [ $? -eq 0 ] && SGST_REBOOT=0
+
+    unset DYN_DTO
+}
+
+
+dyn_dto_rem()
+{
+    if dtoverlay -l |grep -c "$1" &>/dev/null; then
+        dtoverlay -R $1 &>/dev/null
+        [ $? -eq 0 ] && SGST_REBOOT=0
     fi
 }
 
@@ -570,7 +613,7 @@ boot_kernel()
 
 ask_vc4()
 {
-    dto_ask $1
+    DYN_DTO=false dto_ask $1
     if [[ $BAILED -ne 1 ]] && [[ $NO_OVERLAY -ne 1 ]]; then
         if [[ $DRV_DISABLED -eq 1 ]]; then
             cfg_enable gpu_mem

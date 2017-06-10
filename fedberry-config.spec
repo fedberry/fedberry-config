@@ -20,6 +20,7 @@ Conflicts:  rootfs-resize
 BuildRequires: discount >= 2.1
 BuildRequires: systemd
 Requires: pv
+Requires: raspberrypi-vc-utils
 Requires(post): systemd
 Requires(preun): systemd
 Requires(postun): systemd
