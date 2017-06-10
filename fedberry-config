@@ -672,7 +672,7 @@ bt_ask()
 bt_enable()
 {
     # check for RPi3 device
-    if ! cat /sys/firmware/devicetree/base/model |grep -c "Raspberry Pi 3 Model B" &>/dev/null; then
+    if ! echo $RPI_MODEL |grep -c "Raspberry Pi 3 Model B" &>/dev/null; then
         msg_box "Raspberry Pi 3 Model B not found, can not proceed"
         return 0
     fi
