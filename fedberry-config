@@ -945,27 +945,6 @@ selinux_enable()
 }
 
 
-show_info()
-{
-    sys_info
-
-    msg_box "System Information - $DATE_TIME" \
-"* OS INFORMATION *
-OS Release: $OS_NAME $OS_VER_ID ($ARCH)
-SELinux Mode: $SE_MODE
-Running Kernel: $CUR_KERN
-Memory Free (kB): $MEM_FREE
-Memory Available (kB): $MEM_AVLB
-\n* HARDWARE INFORMATION *
-Model: $RPI_MODEL
-Revision: $BOARD_REV (${MFG_INFO[$BOARD_REV]})
-CPU Temp: $CPU_TEMP C
-CPU Freq Current (MHz): $CPU_CUR
-CPU Freq Maximum (MHz): $CPU_MAX
-CPU Freq Minimum (MHz): $CPU_MIN"
-}
-
-
 menu_bootsplash()
 {
     local MENU_TITLES=(
@@ -1118,53 +1097,31 @@ menu_rtc()
 }
 
 
-menu_drivers()
+menu_main()
 {
-    local MENU_TITLES=(
-    "Configure System Drivers/Interfaces" "Choose an Option")
+    local MENU_TITLES=("Main Menu" "Choose an Option")
 
-    local MENU_BUTTONS=("Select" "Main Menu")
+    local MENU_BUTTONS=("Select" "Exit")
 
     local MENU_ITEMS=(
-    "1. HW Interfaces" "Configure various system hardware interfaces"
-    "2. Mesa DRM VC4" "Mesa/DRM VC4 driver for RPi (Experimental)"
-    "3. Pi Camera" "Enable/disable the RPi Camera"
-    "4. LIRC RPi" "Linux Infrared Remote Control for the RPi (LIRC)"
-    "5. I2C RTC" "Realtime Cock (RTC) support"
-    "6. RPi3 Bluetooth" "RPi3 bluetooth support"
-    "7. Audio Driver" "Enable/disable sigma-delta audio driver (Experimental)")
+    "1. System Configuration" "Configure various system options"
+    "2. RPi Interfaces" "Configure RPi hardware interfaces"
+    "3. Video/Display" "Configure video & display devices"
+    "4. Audio" "Configure audio devices"
+    "5. Network" "Configure network devices"
+    "6. Other" "Configure other miscellaneous devices"
+    "7. System Info" "Show current system information"
+    "8. About $NAME" "Information about this configuration utility")
 
     declare -A MENU_ACTIONS=(
-    [${MENU_ITEMS[0]}]=menu_params
-    [${MENU_ITEMS[2]}]=menu_vc4
-    [${MENU_ITEMS[4]}]=pi_camera
-    [${MENU_ITEMS[6]}]="dto_ask lirc-rpi"
-    [${MENU_ITEMS[8]}]=menu_rtc
-    [${MENU_ITEMS[10]}]="bt_ask"
-    [${MENU_ITEMS[12]}]=audio_pwm_mode)
-
-    dialog_menu $MENU_ARGS
-}
-
-
-menu_params()
-{
-    local MENU_TITLES=(
-    "Enable/Disable Hardware Interfaces" "Choose an Option")
-
-    local MENU_BUTTONS=("Select" "Cancel")
-
-    local MENU_ITEMS=(
-    "1. I2C interface" "Inter-Integrated Circuit (i2c) interface"
-    "2. I2S interface" "Inter-IC Sound, (i2s) interface"
-    "3. SPI interface" "Serial Peripheral Interface"
-    "4. Audio" "On-board ALSA audio interface")
-
-    declare -A MENU_ACTIONS=(
-    [${MENU_ITEMS[0]}]="dtp_ask i2c"
-    [${MENU_ITEMS[2]}]="dtp_ask i2s"
-    [${MENU_ITEMS[4]}]="dtp_ask spi"
-    [${MENU_ITEMS[6]}]="dtp_ask audio")
+    [${MENU_ITEMS[0]}]=menu_system
+    [${MENU_ITEMS[2]}]=menu_intfce
+    [${MENU_ITEMS[4]}]=menu_video
+    [${MENU_ITEMS[6]}]=menu_audio
+    [${MENU_ITEMS[8]}]=menu_network
+    [${MENU_ITEMS[10]}]=menu_misc
+    [${MENU_ITEMS[12]}]=show_info
+    [${MENU_ITEMS[14]}]=about)
 
     dialog_menu $MENU_ARGS
 }
@@ -1179,41 +1136,136 @@ menu_system()
     local MENU_ITEMS=(
     "1. Set Boot Kernel" "Select kernel to use for booting the system"
     "2. Bootsplash" "Enable/disable plymouth graphical bootsplash"
-    "3. SELinux" "Configure SELinux options")
+    "3. SELinux" "Configure SELinux options"
+    "4. Add Swap File" "Add and enable a swap file"
+    "5. Expand Root FS" "Expand (grow) root filesystem on SD card"
+    )
 
     declare -A MENU_ACTIONS=(
     [${MENU_ITEMS[0]}]=menu_kernel
     [${MENU_ITEMS[2]}]=menu_bootsplash
-    [${MENU_ITEMS[4]}]=menu_selinux)
+    [${MENU_ITEMS[4]}]=menu_selinux
+    [${MENU_ITEMS[6]}]=menu_swap
+    [${MENU_ITEMS[8]}]=rootfs_ask
+    )
 
     dialog_menu $MENU_ARGS
 }
 
 
-
-menu_main()
+menu_intfce()
 {
-    local MENU_TITLES=("Main Menu" "Choose an Option")
+    local MENU_TITLES=(
+    "Enable/Disable Hardware Interfaces" "Choose an Option")
 
-    local MENU_BUTTONS=("Select" "Exit")
+    local MENU_BUTTONS=("Select" "Cancel")
 
     local MENU_ITEMS=(
-    "1. System Configuration" "Configure various system options"
-    "2. Drivers/Interfaces" "Configure system drivers/interfaces"
-    "3. Expand Root FS" "Expand (grow) root filesystem on SD card"
-    "4. Add Swap File" "Add and enable a swap file"
-    "5. System Info" "Show current system information"
-    "6. About $NAME" "Information about this configuration utility")
+    "1. I2C interface" "Inter-Integrated Circuit (i2c) interface"
+    "2. I2S interface" "Inter-IC Sound, (i2s) interface"
+    "3. SPI interface" "Serial Peripheral Interface")
 
     declare -A MENU_ACTIONS=(
-    [${MENU_ITEMS[0]}]=menu_system
-    [${MENU_ITEMS[2]}]=menu_drivers
-    [${MENU_ITEMS[4]}]=rootfs_ask
-    [${MENU_ITEMS[6]}]=menu_swap
-    [${MENU_ITEMS[8]}]=show_info
-    [${MENU_ITEMS[10]}]=about)
+    [${MENU_ITEMS[0]}]="dtp_ask i2c"
+    [${MENU_ITEMS[2]}]="dtp_ask i2s"
+    [${MENU_ITEMS[4]}]="dtp_ask spi")
 
     dialog_menu $MENU_ARGS
+}
+
+
+menu_video()
+{
+    local MENU_TITLES=(
+    "Enable/Disable Video & Display Devices" "Choose an Option")
+
+    local MENU_BUTTONS=("Select" "Cancel")
+
+    local MENU_ITEMS=(
+    "1. Pi Camera" "Enable/disable the RPi Camera"
+    "2. Mesa DRM VC4" "Mesa/DRM VC4 driver for RPi (Experimental)")
+
+    declare -A MENU_ACTIONS=(
+    [${MENU_ITEMS[0]}]=pi_camera
+    [${MENU_ITEMS[2]}]=menu_vc4)
+
+    dialog_menu $MENU_ARGS
+}
+
+
+menu_audio()
+{
+    local MENU_TITLES=(
+    "Enable/Disable Audio Devices" "Choose an Option")
+
+    local MENU_BUTTONS=("Select" "Cancel")
+
+    local MENU_ITEMS=(
+    "1. Audio" "Enable/disable on-board ALSA audio interface"
+    "2. Sigma-Delta" "Enable/disable sigma-delta audio driver (Experimental)")
+
+    declare -A MENU_ACTIONS=(
+    [${MENU_ITEMS[0]}]="dtp_ask audio"
+    [${MENU_ITEMS[2]}]=audio_pwm_mode)
+
+    dialog_menu $MENU_ARGS
+}
+
+
+menu_network()
+{
+    local MENU_TITLES=(
+    "Enable/Disable Network Devices" "Choose an Option")
+
+    local MENU_BUTTONS=("Select" "Cancel")
+
+    local MENU_ITEMS=(
+    "1. RPi3 Bluetooth" "Enable/disable RPi3 bluetooth support")
+
+    declare -A MENU_ACTIONS=(
+    [${MENU_ITEMS[0]}]="bt_ask")
+
+    dialog_menu $MENU_ARGS
+}
+
+
+menu_misc()
+{
+    local MENU_TITLES=(
+    "Enable/disable Miscellaneous Devices" "Choose an Option")
+
+    local MENU_BUTTONS=("Select" "Cancel")
+
+    local MENU_ITEMS=(
+    "1. LIRC RPi" "Linux Infrared Remote Control for the RPi (LIRC)"
+    "2. I2C RTC" "Realtime Cock (RTC) support")
+
+    declare -A MENU_ACTIONS=(
+    [${MENU_ITEMS[0]}]="dto_ask lirc-rpi"
+    [${MENU_ITEMS[2]}]=menu_rtc)
+
+    dialog_menu $MENU_ARGS
+}
+
+
+show_info()
+{
+    sys_info
+
+    msg_box "System Information - $DATE_TIME" \
+"* OS INFORMATION *
+OS Release: $OS_NAME $OS_VER_ID ($ARCH)
+SELinux Mode: $SE_MODE
+Running Kernel: $CUR_KERN
+Memory Free (kB): $MEM_FREE
+Memory Available (kB): $MEM_AVLB
+\n* HARDWARE INFORMATION *
+Model: $RPI_MODEL
+Revision: $BOARD_REV (${MFG_INFO[$BOARD_REV]})
+CPU Temp: $CPU_TEMP C
+CPU Freq Current (MHz): $CPU_CUR
+CPU Freq Maximum (MHz): $CPU_MAX
+CPU Freq Minimum (MHz): $CPU_MIN"
 }
 
 
