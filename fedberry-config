@@ -276,7 +276,7 @@ dto_ask()
     else
         if [ $DTO_ENABLED -eq 1 ]; then
             # DTO is enabled already
-            yes_no "${REF_NAMES[$1]} $TXT_ENB"
+            yes_no "${REF_NAMES[$1]} $MSG_ENB"
             if [ $? -eq 0 ]; then
                 SGST_REBOOT=1
                 DRV_DISABLED=1
@@ -286,7 +286,7 @@ dto_ask()
             fi
         elif [ $DTO_DISABLED -eq 1 ]; then
             # DTO is disabled
-            yes_no "${REF_NAMES[$1]} $TXT_DIS"
+            yes_no "${REF_NAMES[$1]} $MSG_DIS"
             if [ $? -eq 0 ]; then
                 SGST_REBOOT=1
                 dto_write enable $1
@@ -295,7 +295,7 @@ dto_ask()
             fi
         else
             # no DTO ref exists, add the requested DTO
-            yes_no "${REF_NAMES[$1]} $TXT_DIS"
+            yes_no "${REF_NAMES[$1]} $MSG_DIS"
             if [ $? -eq 0 ]; then
                 SGST_REBOOT=1
                 dto_write add $1
