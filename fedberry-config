@@ -671,11 +671,7 @@ bt_ask()
 
 bt_enable()
 {
-    # check for RPi3 device
-    if ! echo $RPI_MODEL |grep -c "Raspberry Pi 3 Model B" &>/dev/null; then
-        msg_box "Raspberry Pi 3 Model B not found, can not proceed"
-        return 0
-    fi
+    rpi3_req
 
     # check for software support
     if ! rpm -q bluetooth-rpi3 &>/dev/null; then 
@@ -705,6 +701,18 @@ bt_disable()
 
     # enable pi3-disable-bt overlay
     dto_enable pi3-disable-bt
+}
+
+
+rpi3_req()
+{
+    # bail if not an RPi3
+    if ! echo $RPI_MODEL |grep -c "Raspberry Pi 3" &>/dev/null; then
+        msg_box "Raspberry Pi 3 Model B not found, can not proceed"
+        break
+    else
+        return 0
+    fi
 }
 
 
