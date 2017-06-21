@@ -257,6 +257,15 @@ dto_ask()
     BAILED=0
     DRV_DISABLED=0
 
+    # hackity hack! sometimes overlays work backwards :-/
+    REVERSE=$(echo "$@"| grep -ci "\-\-reverse")
+    if [ $REVERSE -eq 1 ]; then
+        MSG_DIS=$TXT_ENB
+        MSG_ENB=$TXT_DIS
+    else
+        MSG_DIS=$TXT_DIS
+        MSG_ENB=$TXT_ENB
+    fi
 
     # test config.txt for DTO references
     dto_probe $1
