@@ -55,6 +55,7 @@ declare -A DEF_VALS=(
 ### Name references for various DTOs, DTPs & config options
 declare -A REF_NAMES=(
     [allo-boss-dac-pcm512x-audio]="Allo Boss DAC audio card support"
+    [allo-digione]="Allo Digione audio card support"
     [audio]="Onboard alsa audio interface"
     [audio_pwm_mode]="Sigma-Delta audio driver"
     [i2c-rtc]="I2C RTC support"
@@ -1213,12 +1214,14 @@ menu_audio()
     local MENU_ITEMS=(
     "1. RPi Audio" "Enable/disable on-board ALSA audio interface"
     "2. RPi Sigma-Delta" "Enable/disable sigma-delta audio driver (Experimental)"
-    "3. Allo Boss DAC" "Enable/disable support for Allo Boss DAC audio cards")
+    "3. Allo Boss DAC" "Enable/disable Allo Boss DAC audio card support"
+    "4. Allo Digione" "Enable/disable Allo Digione audio card support")
 
     declare -A MENU_ACTIONS=(
     [${MENU_ITEMS[0]}]="dtp_ask audio"
     [${MENU_ITEMS[2]}]=audio_pwm_mode
-    [${MENU_ITEMS[4]}]="dto_ask allo-boss-dac-pcm512x-audio")
+    [${MENU_ITEMS[4]}]="dto_ask allo-boss-dac-pcm512x-audio"
+    [${MENU_ITEMS[6]}]="dto_ask allo-digione")
 
     dialog_menu $MENU_ARGS
 }
