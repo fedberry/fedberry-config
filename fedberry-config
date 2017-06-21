@@ -60,6 +60,11 @@ declare -A REF_NAMES=(
     [audio_pwm_mode]="Sigma-Delta audio driver"
     [fe-pi-audio]="Fe-Pi Audio sound card support"
     [googlevoicehat-soundcard]="Google Voice HAT sound card support"
+    [hifiberry-amp]="HifiBerry Amp & Amp+ audio card support"
+    [hifiberry-dac]="HifiBerry DAC audio card support"
+    [hifiberry-dacplus]="HifiBerry DAC+ audio card support"
+    [hifiberry-digi]="HifiBerry Digi & Digi+ audio card support"
+    [hifiberry-digi-pro]="HifiBerry Digi+ Pro audio card support"
     [i2c-rtc]="I2C RTC support"
     [i2s]="I2S interface"
     [lirc-rpi]="RPi LIRC support"
@@ -1219,7 +1224,13 @@ menu_audio()
     "3. Allo Boss DAC" "Enable/disable Allo Boss DAC audio card support"
     "4. Allo Digione" "Enable/disable Allo Digione audio card support"
     "5. Fe-Pi Audio" "Enable/disable Fe-Pi Audio sound card support"
-    "6. Google Voice HAT" "Enable/disable Google VoiceHAT sound card support")
+    "6. Google VoiceHAT" "Enable/disable Google VoiceHAT sound card support"
+    "7. HifiBerry Amp" "Enable/disable HifiBerry Amp & Amp+ audio card support"
+    "8. HifiBerry DAC" "Enable/disable HifiBerry DAC audio card support"
+    "9. HifiBerry DAC+" "Enable/disable HifiBerry DAC+ audio card support"
+    "10. HifiBerry Digi" "Enable/disable HifiBerry Digi & Digi+ audio card support"
+    "11. HifiBerry D+Pro" "Enable/disable HifiBerry Digi+ Pro audio card support"
+    )
 
     declare -A MENU_ACTIONS=(
     [${MENU_ITEMS[0]}]="dtp_ask audio"
@@ -1228,6 +1239,11 @@ menu_audio()
     [${MENU_ITEMS[6]}]="dto_ask allo-digione"
     [${MENU_ITEMS[8]}]="dto_ask fe-pi-audio"
     [${MENU_ITEMS[10]}]="dto_ask googlevoicehat-soundcard"
+    [${MENU_ITEMS[12]}]="dto_ask hifiberry-amp"
+    [${MENU_ITEMS[14]}]="dto_ask hifiberry-dac"
+    [${MENU_ITEMS[16]}]="dto_ask hifiberry-dacplus"
+    [${MENU_ITEMS[18]}]="dto_ask hifiberry-digi"
+    [${MENU_ITEMS[20]}]="dto_ask hifiberry-digi-pro"
     )
 
     dialog_menu $MENU_ARGS
