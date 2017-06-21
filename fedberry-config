@@ -36,8 +36,8 @@ RPI_MODEL=$( </sys/firmware/devicetree/base/model)
 BOARD_REV=$(awk '/Revision/ { print $3 }' /proc/cpuinfo)
 
 ### Misc standard messages / args
-TXT_ENB="is currently ENABLED in $CFG_TXT\n\nDo you want to DISABLE it?"
-TXT_DIS="is currently DISABLED in $CFG_TXT\n\nDo you want to ENABLE it?"
+TXT_ENB="is currently ENABLED.\n\nDo you want to DISABLE it?"
+TXT_DIS="is currently DISABLED.\n\nDo you want to ENABLE it?"
 MENU_ARGS="MENU_TITLES MENU_BUTTONS MENU_ITEMS MENU_ACTIONS"
 
 ### Default DTP & config opt values
@@ -62,7 +62,7 @@ declare -A REF_NAMES=(
     [i2c]="I2C interface"
     [i2s]="I2S interface"
     [spi]="SPI interface"
-    [audio]="Alsa audio interface"
+    [audio]="Onboard alsa audio interface"
     [audio_pwm_mode]="Sigma-Delta audio driver"
     )
 
