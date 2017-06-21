@@ -64,6 +64,7 @@ declare -A REF_NAMES=(
     [spi]="SPI interface"
     [audio]="Onboard alsa audio interface"
     [audio_pwm_mode]="Sigma-Delta audio driver"
+    [pi3-disable-wifi]="RPi3 onboard WiFi"
     )
 
 ### Board manufacturing information
@@ -1229,10 +1230,12 @@ menu_network()
     local MENU_BUTTONS=("Select" "Cancel")
 
     local MENU_ITEMS=(
-    "1. RPi3 Bluetooth" "Enable/disable RPi3 bluetooth support")
+    "1. RPi3 Bluetooth" "Enable/disable RPi3 onboard Bluetooth"
+    "2. RPi3 Wifi" "Enable/disable RPi3 onboard WiFi")
 
     declare -A MENU_ACTIONS=(
-    [${MENU_ITEMS[0]}]="bt_ask")
+    [${MENU_ITEMS[0]}]="bt_ask"
+    [${MENU_ITEMS[2]}]="rpi3_req && dto_ask pi3-disable-wifi --reverse")
 
     dialog_menu $MENU_ARGS
 }
