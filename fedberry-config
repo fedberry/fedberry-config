@@ -257,8 +257,6 @@ dto_ask()
     BAILED=0
     DRV_DISABLED=0
 
-    # test for no-reboot switch
-    NO_REBOOT=$(echo "$@"| grep -ci "\-\-no\-reboot")
 
     # test config.txt for DTO references
     dto_probe $1
@@ -382,9 +380,6 @@ dtp_ask()
     # reset for each selection
     BAILED=0
 
-    # test for no-reboot switch
-    NO_REBOOT=$(echo "$@"| grep -ci "\-\-no\-reboot")
-
    # test for config.txt option
     dtp_probe $1
 
@@ -469,9 +464,6 @@ config_ask()
 {
     # reset for each selection 
     BAILED=0
-
-    # test for no-reboot switch
-    NO_REBOOT=$(echo "$@"| grep -ci "\-\-no\-reboot")
 
    # test for config.txt option
     cfg_probe $1
