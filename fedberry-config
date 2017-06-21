@@ -59,6 +59,7 @@ declare -A REF_NAMES=(
     [audio]="Onboard alsa audio interface"
     [audio_pwm_mode]="Sigma-Delta audio driver"
     [fe-pi-audio]="Fe-Pi Audio sound card support"
+    [googlevoicehat-soundcard]="Google Voice HAT sound card support"
     [i2c-rtc]="I2C RTC support"
     [i2s]="I2S interface"
     [lirc-rpi]="RPi LIRC support"
@@ -1217,7 +1218,8 @@ menu_audio()
     "2. RPi Sigma-Delta" "Enable/disable sigma-delta audio driver (Experimental)"
     "3. Allo Boss DAC" "Enable/disable Allo Boss DAC audio card support"
     "4. Allo Digione" "Enable/disable Allo Digione audio card support"
-    "5. Fe-Pi Audio" "Enable/disable Fe-Pi Audio Sound Card support")
+    "5. Fe-Pi Audio" "Enable/disable Fe-Pi Audio sound card support"
+    "6. Google Voice HAT" "Enable/disable Google VoiceHAT sound card support")
 
     declare -A MENU_ACTIONS=(
     [${MENU_ITEMS[0]}]="dtp_ask audio"
@@ -1225,6 +1227,7 @@ menu_audio()
     [${MENU_ITEMS[4]}]="dto_ask allo-boss-dac-pcm512x-audio"
     [${MENU_ITEMS[6]}]="dto_ask allo-digione"
     [${MENU_ITEMS[8]}]="dto_ask fe-pi-audio"
+    [${MENU_ITEMS[10]}]="dto_ask googlevoicehat-soundcard"
     )
 
     dialog_menu $MENU_ARGS
