@@ -65,6 +65,7 @@ declare -A REF_NAMES=(
     [audio]="Onboard alsa audio interface"
     [audio_pwm_mode]="Sigma-Delta audio driver"
     [pi3-disable-wifi]="RPi3 onboard WiFi"
+    [allo-boss-dac-pcm512x-audio]="Allo Boss DAC audio card support"
     )
 
 ### Board manufacturing information
@@ -1211,12 +1212,14 @@ menu_audio()
     local MENU_BUTTONS=("Select" "Cancel")
 
     local MENU_ITEMS=(
-    "1. Audio" "Enable/disable on-board ALSA audio interface"
-    "2. Sigma-Delta" "Enable/disable sigma-delta audio driver (Experimental)")
+    "1. RPi Audio" "Enable/disable on-board ALSA audio interface"
+    "2. RPi Sigma-Delta" "Enable/disable sigma-delta audio driver (Experimental)"
+    "3. Allo Boss DAC" "Enable/disable support for Allo Boss DAC audio cards")
 
     declare -A MENU_ACTIONS=(
     [${MENU_ITEMS[0]}]="dtp_ask audio"
-    [${MENU_ITEMS[2]}]=audio_pwm_mode)
+    [${MENU_ITEMS[2]}]=audio_pwm_mode
+    [${MENU_ITEMS[4]}]="dto_ask allo-boss-dac-pcm512x-audio")
 
     dialog_menu $MENU_ARGS
 }
