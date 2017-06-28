@@ -733,7 +733,7 @@ rpi3_req()
 
 audio_pwm_mode()
 {
-    msg_box "Sigma-Delta Audio Driver" "The sigma-delta audio driver is an EXPERIMENTAL analogue audio driver that significantly improves sound quality from the 3.5mm audio jack.\n\nFor more information please read:\n\nhttps://www.raspberrypi.org/forums/viewtopic.php?f=29&t=136445"
+    msg_box "Sigma-Delta Audio Driver" "The sigma-delta audio driver is an EXPERIMENTAL analogue audio driver that significantly improves sound quality from the RPi's onboard 3.5mm audio jack.\n\nFor more information please read:\n\nhttps://www.raspberrypi.org/forums/viewtopic.php?f=29&t=136445"
 
     config_ask audio_pwm_mode
     if [[ $BAILED -ne 1 ]]; then
