@@ -68,6 +68,8 @@ declare -A REF_NAMES=(
     [iqaudio-dac]="IQaudio DAC audio card support"
     [iqaudio-dacplus]="IQaudio DAC+ audio card support"
     [iqaudio-digi-wm8804-audio]="IQAudIO Digi WM8804 audio card support"
+    [justboom-dac]="JustBoom DAC HAT, Amp HAT, DAC Zero & Amp Zero audio card support"
+    [justboom-digi]="JustBoom Digi HAT and Digi Zero audio card support"
     [i2c-rtc]="I2C RTC support"
     [i2s]="I2S interface"
     [lirc-rpi]="RPi LIRC support"
@@ -1236,6 +1238,8 @@ menu_audio()
     "12. IQaudio DAC" "Enable/disable IQaudio DAC audio card support"
     "13. IQaudio DAC+" "Enable/disable IQaudio DAC+ audio card support"
     "14. IQaudio WM8804" "Enable/disable IQAudIO Digi WM8804 audio card support"
+    "15. JustBoom DAC" "Enable/disable DAC HAT, Amp HAT, DAC Zero & Amp Zero audio card support"
+    "16. JustBoom Digi" "Enable/disable JustBoom Digi HAT and Digi Zero audio cards support"
     )
 
     declare -A MENU_ACTIONS=(
@@ -1253,6 +1257,8 @@ menu_audio()
     [${MENU_ITEMS[22]}]="dto_ask iqaudio-dac"
     [${MENU_ITEMS[24]}]="dto_ask iqaudio-dacplus"
     [${MENU_ITEMS[26]}]="dto_ask iqaudio-digi-wm8804-audio"
+    [${MENU_ITEMS[28]}]="dto_ask justboom-dac"
+    [${MENU_ITEMS[30]}]="dto_ask justboom-digi"
     )
 
     dialog_menu $MENU_ARGS
