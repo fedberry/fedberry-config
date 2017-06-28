@@ -1224,22 +1224,22 @@ menu_audio()
     local MENU_BUTTONS=("Select" "Cancel")
 
     local MENU_ITEMS=(
-    "1. RPi Audio" "Enable/disable on-board ALSA audio interface"
-    "2. RPi Sigma-Delta" "Enable/disable sigma-delta audio driver (Experimental)"
-    "3. Allo Boss DAC" "Enable/disable Allo Boss DAC audio card support"
-    "4. Allo Digione" "Enable/disable Allo Digione audio card support"
-    "5. Fe-Pi Audio" "Enable/disable Fe-Pi Audio sound card support"
-    "6. Google VoiceHAT" "Enable/disable Google VoiceHAT sound card support"
-    "7. HifiBerry Amp" "Enable/disable HifiBerry Amp & Amp+ audio card support"
-    "8. HifiBerry DAC" "Enable/disable HifiBerry DAC audio card support"
-    "9. HifiBerry DAC+" "Enable/disable HifiBerry DAC+ audio card support"
-    "10. HifiBerry Digi" "Enable/disable HifiBerry Digi & Digi+ audio card support"
-    "11. HifiBerry D+Pro" "Enable/disable HifiBerry Digi+ Pro audio card support"
-    "12. IQaudio DAC" "Enable/disable IQaudio DAC audio card support"
-    "13. IQaudio DAC+" "Enable/disable IQaudio DAC+ audio card support"
-    "14. IQaudio WM8804" "Enable/disable IQAudIO Digi WM8804 audio card support"
-    "15. JustBoom DAC" "Enable/disable DAC HAT, Amp HAT, DAC Zero & Amp Zero audio card support"
-    "16. JustBoom Digi" "Enable/disable JustBoom Digi HAT and Digi Zero audio cards support"
+    "1. RPi Audio" "Configure on-board ALSA audio interface"
+    "2. RPi Sigma-Delta" "Configure sigma-delta audio driver (Experimental)"
+    "3. Allo Boss DAC" "Configure Allo Boss DAC audio card"
+    "4. Allo Digione" "Configure Allo Digione audio card"
+    "5. Fe-Pi Audio" "Configure Fe-Pi Audio sound card"
+    "6. Google VoiceHAT" "Configure Google VoiceHAT sound card"
+    "7. HifiBerry Amp" "Configure HifiBerry Amp & Amp+ audio cards"
+    "8. HifiBerry DAC" "Configure HifiBerry DAC audio card"
+    "9. HifiBerry DAC+" "Configure HifiBerry DAC+ audio card"
+    "10. HifiBerry Digi" "Configure HifiBerry Digi & Digi+ audio cards"
+    "11. HifiBerry D+Pro" "Configure HifiBerry Digi+ Pro audio card"
+    "12. IQaudio DAC" "Configure IQaudio DAC audio card"
+    "13. IQaudio DAC+" "Configure IQaudio DAC+ audio card"
+    "14. IQaudio WM8804" "Configure IQAudIO Digi WM8804 audio card"
+    "15. JustBoom DAC" "Configure DAC HAT/Amp HAT/DAC Zero/Amp Zero audio cards"
+    "16. JustBoom Digi" "Configure JustBoom Digi HAT and Digi Zero audio cards"
     )
 
     declare -A MENU_ACTIONS=(
