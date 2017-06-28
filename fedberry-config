@@ -1355,9 +1355,9 @@ Configuration of various system wide options in FedBerry.
 --add-swap <size in MB>     Add and enable a swap file
 --selinux <option>          Set SELinux mode (enforcing, permissive, disabled)
 --bootsplash <option>       Plymouth graphical bootsplash (enable, disable)
---sys-info                  Show current system information
---version                   Output version information and exit
---help                      Display this help and exit"
+--sys-info, -i              Show current system information
+--version, -v               Output version information and exit
+--help, -h                  Display this help and exit"
 }
 
 
@@ -1459,35 +1459,35 @@ main()
 ###
 
 case $1 in
-    "--dto-enable")
+    --dto-enable)
         cmdline dto_enable $2;;
-    "--dto-disable")
+    --dto-disable)
         cmdline dto_disable $2;;
-    "--dtp-enable")
+    --dtp-enable)
         dtp_enable $2;;
-    "--dtp-disable")
+    --dtp-disable)
         dtp_disable $2;;
-    "--cfg-enable")
+    --cfg-enable)
         cmdline cfg_enable $2;;
-    "--cfg-disable")
+    --cfg-disable)
         cmdline cfg_enable $2;;
-    "--rootfs-grow")
+    --rootfs-grow)
         NO_DIALOG=1 rootfs_grow;;
-    "--bt-enable")
+    --bt-enable)
         NO_DIALOG=1 bt_enable;;
-    "--bt-disable")
+    --bt-disable)
         NO_DIALOG=1 bt_disable;;
-    "--add-swap")
+    --add-swap)
         NO_DIALOG=1 swap_add $2;;
-    "--selinux")
+    --selinux)
         NO_DIALOG=1 selinux $2;;
-    "--bootsplash")
+    --bootsplash)
         NO_DIALOG=1 bootsplash $2;;
-    "--sys-info")
+    --sys-info|-i)
         NO_DIALOG=1 show_info;;
-    "--help")
+    --help|-h)
         usage;;
-    "--version")
+    --version|-v)
         echo "$NAME - Version: $VERSION";;
     "")
         main;;
