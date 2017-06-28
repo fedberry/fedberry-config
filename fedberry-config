@@ -1127,14 +1127,14 @@ menu_main()
     local MENU_BUTTONS=("Select" "Exit")
 
     local MENU_ITEMS=(
-    "1. System Configuration" "Configure various system options"
+    "1. System Config" "Configure various system options"
     "2. RPi Interfaces" "Configure RPi hardware interfaces"
     "3. Video/Display" "Configure video & display devices"
     "4. Audio" "Configure audio devices"
     "5. Network" "Configure network devices"
-    "6. Other" "Configure other miscellaneous devices"
+    "6. Misc" "Configure miscellaneous hardware devices"
     "7. System Info" "Show current system information"
-    "8. About $NAME" "Information about this configuration utility")
+    "8. About" "Information about this configuration utility")
 
     declare -A MENU_ACTIONS=(
     [${MENU_ITEMS[0]}]=menu_system
