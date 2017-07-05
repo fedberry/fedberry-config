@@ -639,7 +639,7 @@ rootfs_grow()
     if [ ! -e /.rootfs-grow ]; then
         # Grab required partition & block device information
         ROOT_PART=$(mount |grep 'on / type'|awk '{ print $1 }')
-        BLK_DEV=$(echo ${ROOT_PART//[p,1-9]/})
+        BLK_DEV="/dev/$(lsblk -no pkname ${ROOT_PART})"
         DEV_INFO=$(fdisk -l $BLK_DEV)
         PART_INFO=( $(echo "$DEV_INFO" |awk 'END{print}') )
         LAST_PART=$(echo ${PART_INFO[0]})
@@ -654,7 +654,7 @@ rootfs_grow()
         TOTAL_SECTS=$(echo ${SIZE_INFO[6]})
         START_SECT=$(echo ${PART_INFO[1]})
         END_SECT=$(echo ${PART_INFO[2]})
-        PART_NUM=$(echo ${ROOT_PART//[!1-9]/})
+        PART_NUM=$(echo ${ROOT_PART} | sed "s@${BLK_DEV}@@g" | sed "s@p@@g")
         FREE_SECTS=$(($TOTAL_SECTS - $END_SECT))
 
         # Ensure there is enough space to grow the root partition
