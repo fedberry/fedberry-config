@@ -1,6 +1,7 @@
 #!/bin/bash -
 # Copyright (C) 2016, Vaughan Agrez <devel@agrez.net>
-# Copyright (C) 2016, Jeff Bai <jeffbai@aosc.xyz>
+# Copyright (C) 2016, 2017, Mingcong Bai <jeffbai@aosc.io>
+# Copyright (C) 2016, 2017, Icenowy Zheng <icenowy@aosc.io>
 # fedberry-config is released under GPL licence (version 3)
 # cyanberry-config is based on fedberry-config with adaptations for AOSC OS.
 # See LICENSE file for copyright and license details
@@ -15,9 +16,9 @@
 
 ### Software
 NAME=cyanberry-config
-AUTHORS="Vaughan Agrez, Jeff Bai"
-YEAR=2016
-VERSION=0.3.1
+AUTHORS="Vaughan Agrez, Mingcong Bai, Icenowy Zheng"
+YEAR=2017
+VERSION=0.3.2
 BUG_REPORTS="https://github.com/AOSC-Dev/cyanberry-config"
 
 
