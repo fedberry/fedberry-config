@@ -18,7 +18,7 @@
 NAME=cyanberry-config
 AUTHORS="Vaughan Agrez, Mingcong Bai, Icenowy Zheng"
 YEAR=2017
-VERSION=0.3.2
+VERSION=0.1.2
 BUG_REPORTS="https://github.com/AOSC-Dev/cyanberry-config"
 
 
