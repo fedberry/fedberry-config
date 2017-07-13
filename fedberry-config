@@ -1168,7 +1168,7 @@ menu_main()
     local MENU_BUTTONS=("Select" "Exit")
 
     local MENU_ITEMS=(
-    "1. System Config" "Configure various system options"
+    "1. System" "Configure various system options"
     "2. RPi Interfaces" "Configure RPi hardware interfaces"
     "3. Video/Display" "Configure video & display devices"
     "4. Audio" "Configure audio devices"
