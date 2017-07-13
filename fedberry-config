@@ -39,6 +39,8 @@ BOARD_REV=$(awk '/Revision/ { print $3 }' /proc/cpuinfo)
 TXT_ENB="is currently ENABLED.\n\nDo you want to DISABLE it?"
 TXT_DIS="is currently DISABLED.\n\nDo you want to ENABLE it?"
 MENU_ARGS="MENU_TITLES MENU_BUTTONS MENU_ITEMS MENU_ACTIONS"
+TXT_GPU_MEM="MB of system memory has been allocated to the GPU.
+\n\nA reboot is required for the change in GPU memory allocation."
 
 ### Default DTP & config opt values
 declare -A DEF_VALS=(
@@ -1083,6 +1085,39 @@ menu_swap()
 }
 
 
+menu_gpu_mem()
+{
+    sys_info
+
+    local MENU_TITLES=(
+    "Current allocated GPU memory: $GPU_MEM MB" "Choose new GPU memory allocation")
+
+    local MENU_BUTTONS=("Select" "Cancel")
+
+    local MENU_ITEMS=(
+    "1. 16 MB " "Allocate 16 MB of system memory to the GPU"
+    "2. 32 MB " "Allocate 32 MB of system memory to the GPU"
+    "3. 64 MB " "Allocate 64 MB of system memory to the GPU"
+    "4. 96 MB  " "Allocate 96 MB of system memory to the GPU"
+    "5. 128 MB  " "Allocate 128 MB of system memory to the GPU"
+    "6. 192 MB  " "Allocate 192 MB of system memory to the GPU"
+    "7. 256 MB  " "Allocate 256 MB of system memory to the GPU"
+    )
+
+    declare -A MENU_ACTIONS=(
+    [${MENU_ITEMS[0]}]="cfg_enable gpu_mem 16; msg_box '16 $TXT_GPU_MEM'; break"
+    [${MENU_ITEMS[2]}]="cfg_enable gpu_mem 32; msg_box '32 $TXT_GPU_MEM'; break"
+    [${MENU_ITEMS[4]}]="cfg_enable gpu_mem 64; msg_box '64 $TXT_GPU_MEM'; break"
+    [${MENU_ITEMS[6]}]="cfg_enable gpu_mem 96; msg_box '96 $TXT_GPU_MEM'; break"
+    [${MENU_ITEMS[8]}]="cfg_enable gpu_mem 128; msg_box '128 $TXT_GPU_MEM'; break"
+    [${MENU_ITEMS[10]}]="cfg_enable gpu_mem 192; msg_box '192 $TXT_GPU_MEM'; break"
+    [${MENU_ITEMS[12]}]="cfg_enable gpu_mem 256; msg_box '256 $TXT_GPU_MEM'; break"
+    )
+
+    dialog_menu $MENU_ARGS
+}
+
+
 menu_rtc()
 {
     # We don't have to enable i2c interface first here as the DTO should
@@ -1212,11 +1247,13 @@ menu_video()
 
     local MENU_ITEMS=(
     "1. Pi Camera" "Enable/disable the RPi Camera"
-    "2. Mesa DRM VC4" "Mesa/DRM VC4 driver for RPi (Experimental)")
+    "2. Allocate GPU Memory" "Set amount of system memory allocated to the GPU"
+    "3. Mesa DRM VC4" "Mesa/DRM VC4 driver for RPi (Experimental)")
 
     declare -A MENU_ACTIONS=(
     [${MENU_ITEMS[0]}]=pi_camera
-    [${MENU_ITEMS[2]}]=menu_vc4)
+    [${MENU_ITEMS[2]}]=menu_gpu_mem
+    [${MENU_ITEMS[4]}]=menu_vc4)
 
     dialog_menu $MENU_ARGS
 }
@@ -1401,6 +1438,7 @@ sys_info()
     CUR_KERN=$(uname -r |sed 's/.fc[0-9][0-9].'$ARCH'//')
     MEM_FREE=$(awk '/MemFree/ { print $2 }' /proc/meminfo)
     MEM_AVLB=$(awk '/MemAvailable/ { print $2 }' /proc/meminfo)
+    GPU_MEM=$(vcgencmd get_mem gpu |sed 's/[^0-9]*//g')
 }
 
 
