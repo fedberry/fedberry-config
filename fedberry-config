@@ -450,12 +450,18 @@ cfg_probe()
 
 cfg_enable()
 {
+    # 1st arg = config name; 2nd arg (if any) = new parameter value
     cfg_probe $1
     if [ $CFG_DISABLED -eq 1 ]; then
         cfg_write enable $1
         SGST_REBOOT=1
     elif [ $CFG_ENABLED -ne 1 ]; then
         cfg_write add $1
+        SGST_REBOOT=1
+    fi
+
+    if [ ! $2 == "" ]; then
+        cfg_val_update $1 $2
         SGST_REBOOT=1
     fi
 }
@@ -1427,7 +1433,7 @@ cmdline()
         CMD_ARG=$(echo $CMD_ARG| sed 's/-overlay//')
     fi
 
-    $1 $CMD_ARG
+    $1 $CMD_ARG ${3:-}
 }
 
 
@@ -1468,7 +1474,7 @@ case $1 in
     --dtp-disable)
         dtp_disable $2;;
     --cfg-enable)
-        cmdline cfg_enable $2;;
+        cmdline cfg_enable $2 ${3:-};;
     --cfg-disable)
         cmdline cfg_enable $2;;
     --rootfs-grow)
