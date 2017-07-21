@@ -694,7 +694,7 @@ bt_ask()
 
 bt_enable()
 {
-    rpi3_req
+    rpi_req 3
 
     # check for software support
     if ! rpm -q bluetooth-rpi3 &>/dev/null; then 
