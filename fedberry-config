@@ -493,7 +493,7 @@ cfg_write()
 }
 
 
-config_ask()
+cfg_ask()
 {
     # reset for each selection 
     BAILED=0
@@ -678,7 +678,7 @@ ask_vc4()
 
 pi_camera()
 {
-    config_ask start_x
+    cfg_ask start_x
     if [[ $BAILED -ne 1 ]]; then
         if [[ $OPT_DISABLED -ne 1 ]]; then
             cfg_enable gpu_mem
@@ -776,7 +776,7 @@ audio_pwm_mode()
 {
     msg_box "Sigma-Delta Audio Driver" "The sigma-delta audio driver is an EXPERIMENTAL analogue audio driver that significantly improves sound quality from the RPi's onboard 3.5mm audio jack.\n\nFor more information please read:\n\nhttps://www.raspberrypi.org/forums/viewtopic.php?f=29&t=136445"
 
-    config_ask audio_pwm_mode
+    cfg_ask audio_pwm_mode
     if [[ $BAILED -ne 1 ]]; then
         if [[ $OPT_DISABLED -ne 1 ]]; then
             cfg_enable disable_audio_dither
@@ -1346,7 +1346,7 @@ menu_video()
     [${MENU_ITEMS[0]}]=pi_camera
     [${MENU_ITEMS[2]}]=menu_gpu_mem
     [${MENU_ITEMS[4]}]=menu_fb_depth
-    [${MENU_ITEMS[6]}]="config_ask disable_splash --reverse; SGST_REBOOT=0"
+    [${MENU_ITEMS[6]}]="cfg_ask disable_splash --reverse; SGST_REBOOT=0"
     [${MENU_ITEMS[8]}]=menu_vc4)
 
     dialog_menu $MENU_ARGS
