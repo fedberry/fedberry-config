@@ -52,6 +52,7 @@ declare -A DEF_VALS=(
     [audio]=on
     [audio_pwm_mode]=2
     [disable_audio_dither]=1
+    [disable_splash]=1
     )
 
 ### Name references for various DTOs, DTPs & config options
@@ -60,6 +61,7 @@ declare -A REF_NAMES=(
     [allo-digione]="Allo Digione audio card support"
     [audio]="Onboard alsa audio interface"
     [audio_pwm_mode]="Sigma-Delta audio driver"
+    [disable_splash]="Initial rainbow boot splash"
     [fe-pi-audio]="Fe-Pi Audio sound card support"
     [googlevoicehat-soundcard]="Google Voice HAT sound card support"
     [hifiberry-amp]="HifiBerry Amp & Amp+ audio card support"
@@ -1337,13 +1339,15 @@ menu_video()
     "1. Pi Camera" "Enable/disable the RPi Camera"
     "2. Allocate GPU Memory" "Set amount of system memory allocated to the GPU"
     "3. Colour Depth" "Set console framebuffer colour depth"
-    "4. Mesa DRM VC4" "Mesa/DRM VC4 driver for RPi (Experimental)")
+    "4. Rainbow Splash" "Enable/disable inital rainbow boot splash"
+    "5. Mesa DRM VC4" "Mesa/DRM VC4 driver for RPi (Experimental)")
 
     declare -A MENU_ACTIONS=(
     [${MENU_ITEMS[0]}]=pi_camera
     [${MENU_ITEMS[2]}]=menu_gpu_mem
     [${MENU_ITEMS[4]}]=menu_fb_depth
-    [${MENU_ITEMS[6]}]=menu_vc4)
+    [${MENU_ITEMS[6]}]="config_ask disable_splash --reverse; SGST_REBOOT=0"
+    [${MENU_ITEMS[8]}]=menu_vc4)
 
     dialog_menu $MENU_ARGS
 }
