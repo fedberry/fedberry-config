@@ -445,7 +445,7 @@ cfg_probe()
 {
     # Test for config option
     CFG_ENABLED=$(grep -cim1 ^$1 $CFG_TXT)
-    CFG_DISABLED=$(grep -cim1 ^#$1 $CFG_TXT)
+    CFG_DISABLED=$(grep -cim1 ^#.*$1 $CFG_TXT)
     CFG_VAL=$(grep -E "^$1|^#$1" $CFG_TXT| sed "s/.*$1=//")
 }
 
@@ -482,7 +482,7 @@ cfg_disable()
 cfg_write()
 {
     if [ $1 == "enable" ]; then
-        sed -i "s/^#$2/$2/" $CFG_TXT
+        sed -i "s/^#.*$2/$2/" $CFG_TXT
     elif [ $1 == "add" ]; then
         echo "$2=${DEF_VALS[$2]}" >> $CFG_TXT
     elif [ $1 == "disable" ]; then
