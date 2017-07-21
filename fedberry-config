@@ -1137,6 +1137,31 @@ menu_swap()
 }
 
 
+menu_fb_depth()
+{
+    FB_DEPTH=$(fbset |awk '/geometry/ { print $6 }')
+
+    local MENU_TITLES=(
+    "Current Console Framebuffer Depth: $FB_DEPTH bits" "\nSelect new colour depth:")
+
+    local MENU_BUTTONS=("Select" "Cancel")
+
+    local MENU_ITEMS=(
+    "1. 16 bit " "Set console framebuffer colour depth 16 bits "
+    "2. 24 bit " "Set console framebuffer colour depth 24 bits "
+    "3. 32 bit " "Set console framebuffer colour depth 32 bits (Default)"
+    )
+
+    declare -A MENU_ACTIONS=(
+    [${MENU_ITEMS[0]}]="cfg_enable framebuffer_depth 16; break"
+    [${MENU_ITEMS[2]}]="cfg_enable framebuffer_depth 24; break"
+    [${MENU_ITEMS[4]}]="cfg_enable framebuffer_depth 32; break"
+    )
+
+    dialog_menu $MENU_ARGS
+}
+
+
 menu_gpu_mem()
 {
     sys_info
@@ -1302,12 +1327,14 @@ menu_video()
     local MENU_ITEMS=(
     "1. Pi Camera" "Enable/disable the RPi Camera"
     "2. Allocate GPU Memory" "Set amount of system memory allocated to the GPU"
-    "3. Mesa DRM VC4" "Mesa/DRM VC4 driver for RPi (Experimental)")
+    "3. Colour Depth" "Set console framebuffer colour depth"
+    "4. Mesa DRM VC4" "Mesa/DRM VC4 driver for RPi (Experimental)")
 
     declare -A MENU_ACTIONS=(
     [${MENU_ITEMS[0]}]=pi_camera
     [${MENU_ITEMS[2]}]=menu_gpu_mem
-    [${MENU_ITEMS[4]}]=menu_vc4)
+    [${MENU_ITEMS[4]}]=menu_fb_depth
+    [${MENU_ITEMS[6]}]=menu_vc4)
 
     dialog_menu $MENU_ARGS
 }
