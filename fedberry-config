@@ -727,11 +727,12 @@ bt_disable()
 }
 
 
-rpi3_req()
+rpi_req()
 {
-    # bail if not an RPi3
-    if ! echo $RPI_MODEL |grep -c "Raspberry Pi 3" &>/dev/null; then
-        msg_box "Raspberry Pi 3 Model B not found, can not proceed"
+    MODEL=$1
+    # bail if not the requested model no.
+    if ! echo $RPI_MODEL |grep -c "Raspberry Pi $MODEL" &>/dev/null; then
+        msg_box "Raspberry Pi $MODEL Model B not found, can not proceed"
         break
     else
         return 0
@@ -1321,7 +1322,7 @@ menu_network()
 
     declare -A MENU_ACTIONS=(
     [${MENU_ITEMS[0]}]="bt_ask"
-    [${MENU_ITEMS[2]}]="rpi3_req && dto_ask pi3-disable-wifi --reverse")
+    [${MENU_ITEMS[2]}]="rpi_req 3 && dto_ask pi3-disable-wifi --reverse")
 
     dialog_menu $MENU_ARGS
 }
