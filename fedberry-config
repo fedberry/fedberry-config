@@ -674,7 +674,7 @@ pi_camera()
             # currrently conflicts with the vc4 driver requirements
             dto_disable vc4-kms-v3d
             dto_disable vc4-fkms-v3d
-            [[ $CFG_VALUE -lt 128 ]] && cfg_val_update gpu_mem 128
+            [[ $CFG_VAL -lt 128 ]] && cfg_val_update gpu_mem 128
         fi
     fi
 }
