@@ -740,6 +740,27 @@ rpi_req()
 }
 
 
+rpi_oc()
+{
+    if [ "$1" == "disable" ]; then
+        for i in arm_freq core_freq sdram_freq over_voltage; do
+            cfg_disable $i
+        done
+        msg_box "RPi Overclock Preset" "Overclocking support has been disabled."
+    else
+        cfg_enable arm_freq $1
+        cfg_enable core_freq $2
+        cfg_enable sdram_freq $3
+        cfg_enable over_voltage $4
+
+        msg_box "RPi Overclock Preset" "Updated overclock settings are:\n
+Frequency ARM = $1 MHz\nFrequency GPU core = $2 MHz
+Frequency SDRAM = $3 MHz\nARM/GPU core voltage adjust = $4\
+\n\nPlease reboot to apply updated overclocking settings."
+    fi
+}
+
+
 audio_pwm_mode()
 {
     msg_box "Sigma-Delta Audio Driver" "The sigma-delta audio driver is an EXPERIMENTAL analogue audio driver that significantly improves sound quality from the RPi's onboard 3.5mm audio jack.\n\nFor more information please read:\n\nhttps://www.raspberrypi.org/forums/viewtopic.php?f=29&t=136445"
@@ -977,6 +998,36 @@ selinux_enable()
 }
 
 
+menu_rpi2_oc()
+{
+    rpi_req 2
+
+    yes_no "RPi2 Overclocking" "Please Note: Overclocking your RPi 2 may cause \
+system instability. If your RPi 2 fails to boot, holding down shift during \
+boot up will temporarily disable overclocking.\n\nRefer \
+http://elinux.org/RPi_Overclocking for more information.\n\n
+Do you wish to continue?"
+    if [ $? == 1 ]; then
+        return 0
+    fi
+
+    local MENU_TITLES=(
+    "RPi2 Overclocking" "Choose Overclock Preset")
+
+    local MENU_BUTTONS=("Select" "Cancel")
+
+    local MENU_ITEMS=(
+    "1. None (Disabled) " "Disable overclocking"
+    "2. High " "1000MHz ARM, 500MHz GPU core, 500MHz SDRAM, 2 overvolt")
+
+    declare -A MENU_ACTIONS=(
+    [${MENU_ITEMS[0]}]="rpi_oc disable; break"
+    [${MENU_ITEMS[2]}]="rpi_oc 1000 500 500 2; break")
+
+    dialog_menu $MENU_ARGS
+}
+
+
 menu_bootsplash()
 {
     local MENU_TITLES=(
@@ -1204,6 +1255,7 @@ menu_system()
     "3. SELinux" "Configure SELinux options"
     "4. Add Swap File" "Add and enable a swap file"
     "5. Expand Root FS" "Expand (grow) root filesystem on SD card"
+    "6. Overclock RPi2" "Configure overclocking for RPi2"
     )
 
     declare -A MENU_ACTIONS=(
@@ -1212,6 +1264,7 @@ menu_system()
     [${MENU_ITEMS[4]}]=menu_selinux
     [${MENU_ITEMS[6]}]=menu_swap
     [${MENU_ITEMS[8]}]=rootfs_ask
+    [${MENU_ITEMS[10]}]=menu_rpi2_oc
     )
 
     dialog_menu $MENU_ARGS
