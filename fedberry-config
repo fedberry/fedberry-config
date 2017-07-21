@@ -496,12 +496,21 @@ config_ask()
     # reset for each selection 
     BAILED=0
 
+    REVERSE=$(echo "$@"| grep -ci "\-\-reverse")
+    if [ $REVERSE -eq 1 ]; then
+        MSG_DIS=$TXT_ENB
+        MSG_ENB=$TXT_DIS
+    else
+        MSG_DIS=$TXT_DIS
+        MSG_ENB=$TXT_ENB
+    fi
+
    # test for config.txt option
     cfg_probe $1
 
     if [ $CFG_ENABLED -eq 1 ]; then
         # config ref is enabled already
-        yes_no "${REF_NAMES[$1]} $TXT_ENB"
+        yes_no "${REF_NAMES[$1]} $MSG_ENB"
         if [ $? -eq 0 ]; then
             cfg_write disable $1
             SGST_REBOOT=1
@@ -511,7 +520,7 @@ config_ask()
         fi
     elif [ $CFG_DISABLED -eq 1 ]; then
         # config ref is disabled
-        yes_no "${REF_NAMES[$1]} $TXT_DIS"
+        yes_no "${REF_NAMES[$1]} $MSG_DIS"
         if [ $? -eq 0 ]; then
             cfg_write enable $1
             SGST_REBOOT=1
@@ -520,7 +529,7 @@ config_ask()
         fi
     else
         # no config ref exists, add it
-        yes_no "${REF_NAMES[$1]} $TXT_DIS"
+        yes_no "${REF_NAMES[$1]} $MSG_DIS"
         if [ $? -eq 0 ]; then
             cfg_write add $1
             SGST_REBOOT=1
