@@ -1443,7 +1443,7 @@ Configuration of various system wide options in FedBerry.
 --dto-enable <overlay>      Enable Device Tree overlay
 --dto-disable <overlay>     Disable Device Tree overlay
 --dtp-enable <paramater>    Enable Device Tree parameter
---dtp-disable <paramater>   Device Tree parameter
+--dtp-disable <paramater>   Disable Device Tree parameter
 --cfg-enable <option>       Enable config.txt option
 --cfg-disable <option>      Disable config.txt option
 --rootfs-grow               Expand (grow) root filesystem on SD card
