@@ -2,21 +2,24 @@
 A utility for making common FedBerry configuration changes via a simple menu-driven interface or via command line switches. The majority of the configuration changes result in automated modifications to `/boot/config.txt`, `/boot/cmdline.txt` and/or other standard Fedora configuration files. Many options will require a reboot to take effect.
 
 ## Main Features:
-* Enable / Disable Device Tree overlays
-* Enable / Disable Device Tree parameters
-* Enable / Disable hardware support / drivers including:
-  * Mesa VC4 driver(s)
+* Configure Device Tree Overlays / Parameters
+* Configure various system options & devices including:
+  * Mesa VC4 driver
+  * Sigma-Delta on-board audio driver
+  * Various 3rd party audio drivers
   * RPi Camera driver
   * Linux Infrared Remote Control (LIRC) support
   * Realtime Clock (RTC) support
-  * Bluetooth support for RPi3
+  * RPi3 Bluetooth & Wifi support
   * Sigma-Delta audio driver
+  * GPU memory allocation support
+  * Console framebuffer depth support
 * Expand (grow) root filesystem on SD card
-* Select which kernel you want to use at boot 
+* Select kernel version to use for booting 
 * Add and enable swap files
-* Set SELinux modes (enforcing, permissive, disabled)
+* Set SELinux modes
 * Enable / Disable plymouth graphical boot splash
-* Show current system information
+* Enable overclocking support for RPi2
 
 ## Screen Shots
 ### Main Menu
