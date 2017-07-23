@@ -1450,13 +1450,13 @@ show_info()
     sys_info
 
     msg_box "System Information - $DATE_TIME" \
-"## OS ##
+"<< OS >>
 OS Release: $OS_NAME $OS_VER_ID ($ARCH)
 SELinux Mode: $SE_MODE
 Running Kernel: $CUR_KERN
 Memory Free (kB): $MEM_FREE
 Memory Available (kB): $MEM_AVLB
-\n## HARDWARE ##
+\n<< HARDWARE >>
 Model: $RPI_MODEL
 Revision: $BOARD_REV (${MFG_INFO[$BOARD_REV]})
 CPU Temp: $CPU_TEMP C
