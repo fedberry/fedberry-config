@@ -152,7 +152,12 @@ dialog_menu()
         local -n ITEMS=$3
         local -n ACTIONS=$4
 
-        DLG_CMD=(whiptail --title "${TITLE[0]}" --menu "${TITLE[1]}" --backtitle "$OS_NAME $OS_VER_ID ($ARCH)" --ok-button "${BUTTONS[0]}" --cancel-button "${BUTTONS[1]}" $DLG_H $DLG_W $DLG_MH)
+        DLG_CMD=(whiptail \
+        --title "${TITLE[0]}" \
+        --menu "${TITLE[1]}" \
+        --backtitle "$OS_NAME $OS_VER_ID ($ARCH)" \
+        --ok-button "${BUTTONS[0]}" \
+        --cancel-button "${BUTTONS[1]}" $DLG_H $DLG_W $DLG_MH)
 
         SEL=$("${DLG_CMD[@]}" "${ITEMS[@]}" 3>&1 1>&2 2>&3)
         RETVAL=$?
