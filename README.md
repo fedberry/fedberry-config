@@ -11,7 +11,6 @@ A utility for making common FedBerry configuration changes via a simple menu-dri
   * Linux Infrared Remote Control (LIRC) support
   * Realtime Clock (RTC) support
   * RPi3 Bluetooth & Wifi support
-  * Sigma-Delta audio driver
   * GPU memory allocation support
   * Console framebuffer depth support
 * Expand (grow) root filesystem on SD card
