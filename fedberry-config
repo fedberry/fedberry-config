@@ -30,7 +30,7 @@ OS_RELEASE=/etc/os-release
 ARCH=$(arch| sed -r 's/([6-7])l/\1hl/')
 OS_NAME=$(awk -F= '/^NAME=/ { print $2 }' $OS_RELEASE)
 OS_VER_ID=$(awk -F= '/^VERSION_ID/ { print $2 }' $OS_RELEASE)
-RPI_MODEL=$( </sys/firmware/devicetree/base/model)
+RPI_MODEL=$( </sys/firmware/devicetree/base/model tr -d '\0')
 BOARD_REV=$(awk '/Revision/ { print $3 }' /proc/cpuinfo)
 
 ### Misc standard messages / args
