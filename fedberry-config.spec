@@ -19,6 +19,7 @@ Obsoletes:  rootfs-resize
 Conflicts:  rootfs-resize
 BuildRequires: discount >= 2.1
 BuildRequires: systemd
+Requires: newt
 Requires: pv
 Requires: raspberrypi-vc-utils
 Requires(post): systemd
