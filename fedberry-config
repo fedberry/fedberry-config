@@ -1368,39 +1368,58 @@ menu_audio()
     local MENU_ITEMS=(
     "1. RPi Audio" "Configure on-board ALSA audio interface"
     "2. RPi Sigma-Delta" "Configure sigma-delta audio driver (Experimental)"
-    "3. Allo Boss DAC" "Configure Allo Boss DAC audio card"
-    "4. Allo Digione" "Configure Allo Digione audio card"
-    "5. Fe-Pi Audio" "Configure Fe-Pi Audio sound card"
-    "6. Google VoiceHAT" "Configure Google VoiceHAT sound card"
-    "7. HifiBerry Amp" "Configure HifiBerry Amp & Amp+ audio cards"
-    "8. HifiBerry DAC" "Configure HifiBerry DAC audio card"
-    "9. HifiBerry DAC+" "Configure HifiBerry DAC+ audio card"
-    "10. HifiBerry Digi" "Configure HifiBerry Digi & Digi+ audio cards"
-    "11. HifiBerry D+Pro" "Configure HifiBerry Digi+ Pro audio card"
-    "12. IQaudio DAC" "Configure IQaudio DAC audio card"
-    "13. IQaudio DAC+" "Configure IQaudio DAC+ audio card"
-    "14. IQaudio WM8804" "Configure IQAudIO Digi WM8804 audio card"
-    "15. JustBoom DAC" "Configure DAC/Amp HAT & DAC/Amp Zero audio cards"
-    "16. JustBoom Digi" "Configure JustBoom Digi Zero/HAT audio cards"
+    "3. 3rd Party Devices" "Configure 3rd party audio devices"
     )
 
     declare -A MENU_ACTIONS=(
     [${MENU_ITEMS[0]}]="dtp_ask audio"
     [${MENU_ITEMS[2]}]=audio_pwm_mode
-    [${MENU_ITEMS[4]}]="dto_ask allo-boss-dac-pcm512x-audio"
-    [${MENU_ITEMS[6]}]="dto_ask allo-digione"
-    [${MENU_ITEMS[8]}]="dto_ask fe-pi-audio"
-    [${MENU_ITEMS[10]}]="dto_ask googlevoicehat-soundcard"
-    [${MENU_ITEMS[12]}]="dto_ask hifiberry-amp"
-    [${MENU_ITEMS[14]}]="dto_ask hifiberry-dac"
-    [${MENU_ITEMS[16]}]="dto_ask hifiberry-dacplus"
-    [${MENU_ITEMS[18]}]="dto_ask hifiberry-digi"
-    [${MENU_ITEMS[20]}]="dto_ask hifiberry-digi-pro"
-    [${MENU_ITEMS[22]}]="dto_ask iqaudio-dac"
-    [${MENU_ITEMS[24]}]="dto_ask iqaudio-dacplus"
-    [${MENU_ITEMS[26]}]="dto_ask iqaudio-digi-wm8804-audio"
-    [${MENU_ITEMS[28]}]="dto_ask justboom-dac"
-    [${MENU_ITEMS[30]}]="dto_ask justboom-digi"
+    [${MENU_ITEMS[4]}]=menu_audio_3rd
+    )
+
+    dialog_menu $MENU_ARGS
+}
+
+
+menu_audio_3rd()
+{
+    local MENU_TITLES=(
+    "Enable/Disable 3rd Party Audio Devices" "Choose an Option")
+
+    local MENU_BUTTONS=("Select" "Cancel")
+
+    local MENU_ITEMS=(
+    "1. Allo Boss DAC" "Configure Allo Boss DAC audio card"
+    "2. Allo Digione" "Configure Allo Digione audio card"
+    "3. Fe-Pi Audio" "Configure Fe-Pi Audio sound card"
+    "4. Google VoiceHAT" "Configure Google VoiceHAT sound card"
+    "5. HifiBerry Amp" "Configure HifiBerry Amp & Amp+ audio cards"
+    "6. HifiBerry DAC" "Configure HifiBerry DAC audio card"
+    "7. HifiBerry DAC+" "Configure HifiBerry DAC+ audio card"
+    "8. HifiBerry Digi" "Configure HifiBerry Digi & Digi+ audio cards"
+    "9. HifiBerry D+Pro" "Configure HifiBerry Digi+ Pro audio card"
+    "10. IQaudio DAC" "Configure IQaudio DAC audio card"
+    "11. IQaudio DAC+" "Configure IQaudio DAC+ audio card"
+    "12. IQaudio WM8804" "Configure IQAudIO Digi WM8804 audio card"
+    "13. JustBoom DAC" "Configure DAC/Amp HAT & DAC/Amp Zero audio cards"
+    "14. JustBoom Digi" "Configure JustBoom Digi Zero/HAT audio cards"
+    )
+
+    declare -A MENU_ACTIONS=(
+    [${MENU_ITEMS[0]}]="dto_ask allo-boss-dac-pcm512x-audio"
+    [${MENU_ITEMS[2]}]="dto_ask allo-digione"
+    [${MENU_ITEMS[4]}]="dto_ask fe-pi-audio"
+    [${MENU_ITEMS[6]}]="dto_ask googlevoicehat-soundcard"
+    [${MENU_ITEMS[8]}]="dto_ask hifiberry-amp"
+    [${MENU_ITEMS[10]}]="dto_ask hifiberry-dac"
+    [${MENU_ITEMS[12]}]="dto_ask hifiberry-dacplus"
+    [${MENU_ITEMS[14]}]="dto_ask hifiberry-digi"
+    [${MENU_ITEMS[16]}]="dto_ask hifiberry-digi-pro"
+    [${MENU_ITEMS[18]}]="dto_ask iqaudio-dac"
+    [${MENU_ITEMS[20]}]="dto_ask iqaudio-dacplus"
+    [${MENU_ITEMS[22]}]="dto_ask iqaudio-digi-wm8804-audio"
+    [${MENU_ITEMS[24]}]="dto_ask justboom-dac"
+    [${MENU_ITEMS[26]}]="dto_ask justboom-digi"
     )
 
     dialog_menu $MENU_ARGS
