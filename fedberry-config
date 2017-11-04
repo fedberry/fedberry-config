@@ -1118,7 +1118,7 @@ menu_kernel()
     local MENU_BUTTONS=("Select" "Cancel")
 
     # list installed kernels
-    read -ra KERNEL_LIST <<<$(ls $MODULES_DIR)
+    KERNEL_LIST=( $(ls $MODULES_DIR) )
 
     local MENU_ITEMS
     declare -A MENU_ACTIONS
