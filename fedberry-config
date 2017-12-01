@@ -889,8 +889,11 @@ rootfs_grow()
     # Check for kernel cmdline parameter 'nofsresize'
     [ $(cat /proc/cmdline |grep -cim1 nofsresize) -eq 1 ] && return 0
 
-    #Get root device
+    # Get root device
     ROOT_PART=$(mount |awk '/on \/ type/ { print $1 }')
+
+    # Show plymouth notification
+    plymouth message --text="Expanding root partition. Please wait." && sleep 1
 
     if [ ! -e /.rootfs-grow ]; then
         # Grab required partition & block device information
@@ -902,6 +905,7 @@ rootfs_grow()
         if [ "$ROOT_PART" != "$LAST_PART" ]; then
             msg_box "Root partition $ROOT_PART is not the last partiton. Can not proceed."
             rm -f /.rootfs-repartition &>/dev/null
+            systemctl disable rootfs-grow.service &>/dev/null
             return 0
         fi
 
@@ -916,6 +920,7 @@ rootfs_grow()
         if [ $FREE_SECTS -lt 10 ]; then
             msg_box "Not enough space remaining on $ROOT_PART. The root parition can not be further expanded."
             rm -f /.rootfs-repartition &>/dev/null
+            systemctl disable rootfs-grow.service &>/dev/null
             return 0
         fi
 
@@ -925,8 +930,10 @@ rootfs_grow()
 
         touch /.rootfs-grow
         systemctl enable rootfs-grow.service &>/dev/null
+        plymouth message --text="Rebooting Fedberry" && sleep 1
         systemctl reboot &>/dev/null
     else
+        plymouth message --text="Finalizing expansion of root filesystem."
         resize2fs $ROOT_PART &>/dev/null
         rm -f /.rootfs-grow /.rootfs-repartition &>/dev/null
 
