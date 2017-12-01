@@ -2,7 +2,7 @@
 %define name    %{bname}-config
 
 Name:       %{name}
-Version:    0.4.0
+Version:    0.4.1
 Release:    1%{?dist}
 License:    GPLv3+
 Summary:    Easy configuration of various system options in FedBerry
@@ -91,6 +91,10 @@ touch --no-create %{_datadir}/icons/hicolor || :
 
 
 %changelog
+
+* Fri Dec 01 2017 Vaughan <vaughan at agrez dot net> 0.4.1-1
+- New release
+
 * Sun Jul 23 2017 Vaughan <vaughan at agrez dot net> 0.4.0-1
 - New release
 
