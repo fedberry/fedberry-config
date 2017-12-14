@@ -1461,7 +1461,7 @@ menu_misc()
 
     local MENU_ITEMS=(
     "1. LIRC RPi" "Linux Infrared Remote Control for the RPi (LIRC)"
-    "2. I2C RTC" "Realtime Cock (RTC) support")
+    "2. I2C RTC" "Realtime Clock (RTC) support")
 
     declare -A MENU_ACTIONS=(
     [${MENU_ITEMS[0]}]="dto_ask lirc-rpi"
