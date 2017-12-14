@@ -892,10 +892,10 @@ rootfs_grow()
     # Get root device
     ROOT_PART=$(mount |awk '/on \/ type/ { print $1 }')
 
-    # Show plymouth notification
-    plymouth message --text="Expanding root partition. Please wait." && sleep 1
-
     if [ ! -e /.rootfs-grow ]; then
+        # Show plymouth notification
+        plymouth message --text="Expanding root partition. Please wait." && sleep 1
+
         # Grab required partition & block device information
         BLK_DEV=$(echo ${ROOT_PART//[p,1-9]/})
         DEV_INFO=$(fdisk -l $BLK_DEV)
