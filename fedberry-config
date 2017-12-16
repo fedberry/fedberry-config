@@ -411,6 +411,8 @@ dtp_ask()
 {
     # reset for each selection
     BAILED=0
+    OPT_DISABLED=0
+
     REVERSE=$(echo "$@"| grep -ci "\-\-reverse")
     if [ $REVERSE -eq 1 ]; then
         MSG_DIS=$TXT_ENB
@@ -510,6 +512,7 @@ cfg_ask()
 {
     # reset for each selection 
     BAILED=0
+    OPT_DISABLED=0
 
     REVERSE=$(echo "$@"| grep -ci "\-\-reverse")
     if [ $REVERSE -eq 1 ]; then
