@@ -19,6 +19,7 @@ A utility for making common FedBerry configuration changes via a simple menu-dri
 * Set SELinux modes
 * Enable / Disable plymouth graphical boot splash
 * Enable overclocking support for RPi2
+* Enable / Disable PWR & ACT LEDs
 
 ## Screen Shots
 ### Main Menu
