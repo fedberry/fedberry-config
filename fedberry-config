@@ -53,10 +53,15 @@ declare -A DEF_VALS=(
     [audio_pwm_mode]=2
     [disable_audio_dither]=1
     [disable_splash]=1
+    [act_led_trigger]=none
+    [act_led_activelow]=off
+    [pwr_led_trigger]=none
+    [pwr_led_activelow]=off
     )
 
 ### Name references for various DTOs, DTPs & config options
 declare -A REF_NAMES=(
+    [act_led_activelow]="Activity (Green) LED"
     [allo-boss-dac-pcm512x-audio]="Allo Boss DAC audio card support"
     [allo-digione]="Allo Digione audio card support"
     [audio]="Onboard alsa audio interface"
@@ -78,6 +83,7 @@ declare -A REF_NAMES=(
     [i2s]="I2S interface"
     [lirc-rpi]="RPi LIRC support"
     [pi3-disable-wifi]="RPi3 onboard WiFi"
+    [pwr_led_activelow]="Power (Red) LED"
     [spi]="SPI interface"
     [start_x]="RPi Camera"
     [vc4-fkms-v3d]="VC4 Mesa/Dispmanx"
@@ -1032,6 +1038,43 @@ selinux_enable()
 }
 
 
+led_ask()
+{
+    if [[ "$1" = ACT ]]; then
+        LED=act
+        LED_SYS=led0
+    elif [[ "$1" = PWR ]]; then
+        LED=pwr
+        LED_SYS=led1
+    fi
+
+    dtp_ask "$LED"_led_activelow --reverse
+    if [[ $BAILED -ne 1 ]]; then
+        if [[ $OPT_DISABLED -ne 1 ]]; then
+            dtp_enable "$LED"_led_activelow
+            dtp_enable "$LED"_led_trigger
+            echo 0 >/sys/class/leds/$LED_SYS/brightness
+            echo none >/sys/class/leds/$LED_SYS/trigger
+            if echo $RPI_MODEL |grep -c "Pi 3" &>/dev/null && [[ "$1" = PWR ]]; then
+                systemctl enable pi3_disable_pwr_led.service &>/dev/null
+            fi
+        else
+            dtp_disable "$LED"_led_activelow
+            dtp_disable "$LED"_led_trigger
+            echo 1 >/sys/class/leds/$LED_SYS/brightness
+            if [[ "$1" = ACT ]]; then
+                echo mmc0 >/sys/class/leds/$LED_SYS/trigger
+            fi
+            if echo $RPI_MODEL |grep -c "Pi 3" &>/dev/null && [[ "$1" = PWR ]]; then
+                systemctl disable pi3_disable_pwr_led.service &>/dev/null
+            fi
+        fi
+    fi
+
+    SGST_REBOOT=0
+}
+
+
 menu_rpi2_oc()
 {
     rpi_req 2
@@ -1076,6 +1119,25 @@ menu_bootsplash()
     declare -A MENU_ACTIONS=(
     [${MENU_ITEMS[0]}]="bootsplash enable ; break"
     [${MENU_ITEMS[2]}]="bootsplash disable ; break")
+
+    dialog_menu $MENU_ARGS
+}
+
+
+menu_led()
+{
+    local MENU_TITLES=(
+    "ACT/PWR LEDs" "Choose LED Options")
+
+    local MENU_BUTTONS=("Select" "Cancel")
+
+    local MENU_ITEMS=(
+    "1. ACT LED" "Enable/disable green activity (ACT) LED"
+    "2. ACT LED" "Enable/disable red power (PWR) LED")
+
+    declare -A MENU_ACTIONS=(
+    [${MENU_ITEMS[0]}]="led_ask ACT ; break"
+    [${MENU_ITEMS[2]}]="led_ask PWR ; break")
 
     dialog_menu $MENU_ARGS
 }
@@ -1311,19 +1373,21 @@ menu_system()
     local MENU_ITEMS=(
     "1. Set Boot Kernel" "Select kernel to use for booting the system"
     "2. Bootsplash" "Enable/disable plymouth graphical bootsplash"
-    "3. SELinux" "Configure SELinux options"
-    "4. Add Swap File" "Add and enable a swap file"
-    "5. Expand Root FS" "Expand (grow) root filesystem on SD card"
-    "6. Overclock RPi2" "Configure overclocking for RPi2"
+    "3. ACT/PWR LED's" "Enable/disable ACT/PWR LED's"
+    "4. SELinux" "Configure SELinux options"
+    "5. Add Swap File" "Add and enable a swap file"
+    "6. Expand Root FS" "Expand (grow) root filesystem on SD card"
+    "7. Overclock RPi2" "Configure overclocking for RPi2"
     )
 
     declare -A MENU_ACTIONS=(
     [${MENU_ITEMS[0]}]=menu_kernel
     [${MENU_ITEMS[2]}]=menu_bootsplash
-    [${MENU_ITEMS[4]}]=menu_selinux
-    [${MENU_ITEMS[6]}]=menu_swap
-    [${MENU_ITEMS[8]}]=rootfs_ask
-    [${MENU_ITEMS[10]}]=menu_rpi2_oc
+    [${MENU_ITEMS[4]}]=menu_led
+    [${MENU_ITEMS[6]}]=menu_selinux
+    [${MENU_ITEMS[8]}]=menu_swap
+    [${MENU_ITEMS[10]}]=rootfs_ask
+    [${MENU_ITEMS[12]}]=menu_rpi2_oc
     )
 
     dialog_menu $MENU_ARGS

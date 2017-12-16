@@ -1,0 +1,15 @@
+[Unit]
+Description=Disable Power LED on the RPi3
+DefaultDependencies=no
+After=sysinit.target local-fs.target
+Before=basic.target
+
+[Service]
+Environment=TERM=linux
+Type=simple
+ExecStart=/bin/sh -c 'echo 0 >/sys/class/leds/led1/brightness'
+StandardError=syslog
+RemainAfterExit=no
+
+[Install]
+WantedBy=multi-user.target

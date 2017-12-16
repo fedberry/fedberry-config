@@ -14,6 +14,7 @@ Source2:    https://raw.githubusercontent.com/%{bname}/%{name}/master/README.md
 Source3:    https://raw.githubusercontent.com/%{bname}/%{name}/master/rootfs-grow.service
 Source4:    https://raw.githubusercontent.com/%{bname}/%{name}/master/%{name}.desktop
 Source5:    https://raw.githubusercontent.com/%{bname}/%{name}/master/%{name}.svg
+Source6:    https://raw.githubusercontent.com/%{bname}/%{name}/master/pi3_disable_pwr_led.service
 BuildArch:  noarch
 Obsoletes:  rootfs-resize
 Conflicts:  rootfs-resize
@@ -51,7 +52,7 @@ rm -rf %{buildroot}
 %{__install} -p %{name} %{buildroot}/%{_sbindir}
 
 %{__install} -d %{buildroot}/%{_unitdir}
-%{__install} -p rootfs-grow.service %{buildroot}/%{_unitdir}
+%{__install} -p *.service %{buildroot}/%{_unitdir}
 
 %{__install} -d %{buildroot}/%{_datadir}/applications
 %{__install} -p %{name}.desktop %{buildroot}/%{_datadir}/applications
@@ -67,16 +68,19 @@ rm -rf %{buildroot}
 
 %post
 %systemd_post rootfs-grow.service
+%systemd_post pi3_disable_pwr_led.service
 touch --no-create %{_datadir}/icons/hicolor || :
 %{_bindir}/gtk-update-icon-cache --quiet %{_datadir}/icons/hicolor || :
 
 
 %preun
 %systemd_preun rootfs-grow.service
+%systemd_preun pi3_disable_pwr_led.service
 
 
 %postun
 %systemd_postun rootfs-grow.service
+%systemd_postun pi3_disable_pwr_led.service
 touch --no-create %{_datadir}/icons/hicolor || :
 %{_bindir}/gtk-update-icon-cache --quiet %{_datadir}/icons/hicolor || :
 
@@ -85,7 +89,7 @@ touch --no-create %{_datadir}/icons/hicolor || :
 %doc README.md README.html
 %license LICENSE
 %attr(0755,root,root) %{_sbindir}/%{name}
-%attr(0644,root,root) %{_unitdir}/rootfs-grow.service
+%attr(0644,root,root) %{_unitdir}/*.service
 %attr(0755,root,root) %{_datadir}/applications/%{name}.desktop
 %attr(0755,root,root) %{_datadir}/icons/hicolor/scalable/apps/%{name}.svg
 
