@@ -50,7 +50,6 @@ declare -A DEF_VALS=(
     [i2s]=on
     [spi]=on
     [audio]=on
-    [audio_pwm_mode]=2
     [disable_audio_dither]=1
     [disable_splash]=1
     [act_led_trigger]=none
@@ -65,7 +64,6 @@ declare -A REF_NAMES=(
     [allo-boss-dac-pcm512x-audio]="Allo Boss DAC audio card support"
     [allo-digione]="Allo Digione audio card support"
     [audio]="Onboard alsa audio interface"
-    [audio_pwm_mode]="Sigma-Delta audio driver"
     [disable_splash]="Initial rainbow boot splash"
     [fe-pi-audio]="Fe-Pi Audio sound card support"
     [googlevoicehat-soundcard]="Google Voice HAT sound card support"
@@ -794,21 +792,6 @@ Frequency SDRAM = $3 MHz\nARM/GPU core voltage adjust = $4\
 }
 
 
-audio_pwm_mode()
-{
-    msg_box "Sigma-Delta Audio Driver" "The sigma-delta audio driver is an EXPERIMENTAL analogue audio driver that significantly improves sound quality from the RPi's onboard 3.5mm audio jack.\n\nFor more information please read:\n\nhttps://www.raspberrypi.org/forums/viewtopic.php?f=29&t=136445"
-
-    cfg_ask audio_pwm_mode
-    if [[ $BAILED -ne 1 ]]; then
-        if [[ $OPT_DISABLED -ne 1 ]]; then
-            cfg_enable disable_audio_dither
-        else
-            cfg_disable disable_audio_dither
-        fi
-    fi
-}
-
-
 bootsplash()
 {
     SPLASH_OPTS="rhgb plymouth.ignore-serial-consoles logo.nologo"
@@ -1449,14 +1432,12 @@ menu_audio()
 
     local MENU_ITEMS=(
     "1. RPi Audio" "Configure on-board ALSA audio interface"
-    "2. RPi Sigma-Delta" "Configure sigma-delta audio driver (Experimental)"
-    "3. 3rd Party Devices" "Configure 3rd party audio devices"
+    "2. 3rd Party Devices" "Configure 3rd party audio devices"
     )
 
     declare -A MENU_ACTIONS=(
     [${MENU_ITEMS[0]}]="dtp_ask audio"
-    [${MENU_ITEMS[2]}]=audio_pwm_mode
-    [${MENU_ITEMS[4]}]=menu_audio_3rd
+    [${MENU_ITEMS[2]}]=menu_audio_3rd
     )
 
     dialog_menu $MENU_ARGS
