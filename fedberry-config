@@ -726,7 +726,7 @@ bt_ask()
 
 bt_enable()
 {
-    rpi_req 3
+    rpi_req 3; [ $? == 1 ] && return
 
     # check for software support
     if ! rpm -q bluetooth-rpi3 &>/dev/null; then 
@@ -1061,16 +1061,14 @@ led_ask()
 
 menu_rpi2_oc()
 {
-    rpi_req 2
+    rpi_req 2; [ $? == 1 ] && return
 
     yes_no "RPi2 Overclocking" "Please Note: Overclocking your RPi 2 may cause \
 system instability. If your RPi 2 fails to boot, holding down shift during \
 boot up will temporarily disable overclocking.\n\nRefer \
 http://elinux.org/RPi_Overclocking for more information.\n\n
 Do you wish to continue?"
-    if [ $? == 1 ]; then
-        return 0
-    fi
+    [ $? == 1 ] && return
 
     local MENU_TITLES=(
     "RPi2 Overclocking" "Choose Overclock Preset")
