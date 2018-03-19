@@ -105,7 +105,7 @@ declare -A MFG_INFO=(
 # FUNCTION_DEFINITIONS
 ###
 
-msg_box()
+msg()
 {
     if [[ $NO_DIALOG -ne 1 ]]; then
         if [ -z "$2" ]; then
@@ -299,7 +299,7 @@ dto_ask()
     dto_probe $1
 
     if [ ! -f $DTO_DIR/$DTB ] && [ ! -f $DTO_DIR/$DTBO ]; then
-        msg_box "ERROR:" "can't find $DTO or $DTBO in current kernel"
+        msg "ERROR:" "can't find $DTO or $DTBO in current kernel"
         NO_OVERLAY=1
     else
         if [ $DTO_ENABLED -eq 1 ]; then
@@ -604,7 +604,7 @@ boot_kernel()
     elif [ -d "$BOOT_DIR/dtb-$1" ]; then
         DTB_DIR=$BOOT_DIR/dtb-$1
     else
-        msg_box "ERROR:" "Can't find DTB dir for selected kernel. Aborting."
+        msg "ERROR:" "Can't find DTB dir for selected kernel. Aborting."
         return 0
     fi
 
@@ -645,7 +645,7 @@ boot_kernel()
     elif [ -f $BOOT_DIR/$VMLINUZ ]; then
         cp -f $BOOT_DIR/$VMLINUZ $KERN_IMG &>/dev/null
     else
-        msg_box "ERROR:" "Can't find selected kernel image. Aborting."
+        msg "ERROR:" "Can't find selected kernel image. Aborting."
         return 0
     fi
 
@@ -657,7 +657,7 @@ boot_kernel()
     fi
 
     SGST_REBOOT=1
-    msg_box "The $1 kernel will be used when $OS_NAME $OS_VER_ID is rebooted"
+    msg "The $1 kernel will be used when $OS_NAME $OS_VER_ID is rebooted"
 }
 
 
@@ -730,7 +730,7 @@ bt_enable()
 
     # check for software support
     if ! rpm -q bluetooth-rpi3 &>/dev/null; then 
-        msg_box "The bluetooth-rpi3 package is not installed, please install.\n\nFor example: dnf install bluetooth-rpi3"
+        msg "The bluetooth-rpi3 package is not installed, please install.\n\nFor example: dnf install bluetooth-rpi3"
         return 0
         # Need to spend some time figuring out how to wrap dnf with progress bar code
         # so we can offer to install required pachages when not found.
@@ -764,8 +764,8 @@ rpi_req()
     MODEL=$1
     # bail if not the requested model no.
     if ! echo $RPI_MODEL |grep -c "Raspberry Pi $MODEL" &>/dev/null; then
-        msg_box "Raspberry Pi $MODEL Model B not found, can not proceed"
-        break
+        msg "Raspberry Pi $MODEL Model B not found, can not proceed"
+        return 1
     else
         return 0
     fi
@@ -778,14 +778,14 @@ rpi_oc()
         for i in arm_freq core_freq sdram_freq over_voltage; do
             cfg_disable $i
         done
-        msg_box "RPi Overclock Preset" "Overclocking support has been disabled."
+        msg "RPi Overclock Preset" "Overclocking support has been disabled."
     else
         cfg_enable arm_freq $1
         cfg_enable core_freq $2
         cfg_enable sdram_freq $3
         cfg_enable over_voltage $4
 
-        msg_box "RPi Overclock Preset" "Updated overclock settings are:\n
+        msg "RPi Overclock Preset" "Updated overclock settings are:\n
 Frequency ARM = $1 MHz\nFrequency GPU core = $2 MHz
 Frequency SDRAM = $3 MHz\nARM/GPU core voltage adjust = $4\
 \n\nPlease reboot to apply updated overclocking settings."
@@ -798,7 +798,7 @@ bootsplash()
     SPLASH_OPTS="rhgb plymouth.ignore-serial-consoles logo.nologo"
 
     if [ $OS_VER_ID -lt 25 ]; then
-        msg_box "Plymouth Graphical Bootsplash" "Plymouth graphical bootsplash is currently unsupported in FedBerry $OS_VER_ID"
+        msg "Plymouth Graphical Bootsplash" "Plymouth graphical bootsplash is currently unsupported in FedBerry $OS_VER_ID"
         return 0
     fi
 
@@ -808,14 +808,14 @@ bootsplash()
                 sed -i "1s/$/ $i/" $CMD_TXT
             fi
         done
-        msg_box "Plymouth graphical bootsplash has been enabled."
+        msg "Plymouth graphical bootsplash has been enabled."
     elif [ "$1" == "disable" ]; then
         for i in $SPLASH_OPTS; do
             if grep -q "$i" $CMD_TXT; then
                 sed -i "s/ $i//" $CMD_TXT
             fi
         done
-        msg_box "Plymouth graphical bootsplash has been disabled."
+        msg "Plymouth graphical bootsplash has been disabled."
     fi
 }
 
@@ -831,7 +831,7 @@ swap_add()
     # check for existing swap file
     CHECK_SWAP=$(swapon --show --noheadings)
     if [ "$CHECK_SWAP" != "" ]; then
-        msg_box "Existing swap file/partition found, can not proceed."
+        msg "Existing swap file/partition found, can not proceed."
         return 0
     fi
 
@@ -842,7 +842,7 @@ swap_add()
     REQ_FREE=$(($SWAP_REQ + 1048576))
 
     if [ $ROOTFS_FREE -lt $REQ_FREE ]; then
-        msg_box "Insufficient free space on rootfs."
+        msg "Insufficient free space on rootfs."
         return 0
     fi
 
@@ -850,7 +850,7 @@ swap_add()
     SWAP_MSG="Creating $1MB swap file, please wait..."
 
     if [ $NO_DIALOG -eq 1 ]; then
-        msg_box "$SWAP_MSG"
+        msg "$SWAP_MSG"
         pv -p --size "$1"M -S /dev/zero | dd of=/swapfile bs=1k count="$1"k status=noxfer
         mkswap /swapfile
     else
@@ -904,7 +904,7 @@ rootfs_grow()
         LAST_PART=$(echo ${PART_INFO[0]})    
 
         if [ "$ROOT_PART" != "$LAST_PART" ]; then
-            msg_box "Root partition $ROOT_PART is not the last partiton. Can not proceed."
+            msg "Root partition $ROOT_PART is not the last partiton. Can not proceed."
             rm -f /.rootfs-repartition &>/dev/null
             systemctl disable rootfs-grow.service &>/dev/null
             return 0
@@ -919,7 +919,7 @@ rootfs_grow()
 
         # Ensure there is enough space to grow the root partition
         if [ $FREE_SECTS -lt 10 ]; then
-            msg_box "Not enough space remaining on $ROOT_PART. The root parition can not be further expanded."
+            msg "Not enough space remaining on $ROOT_PART. The root parition can not be further expanded."
             rm -f /.rootfs-repartition &>/dev/null
             systemctl disable rootfs-grow.service &>/dev/null
             return 0
@@ -951,7 +951,7 @@ selinux()
 
     # Selinux-policy needs to be installed
     if [ ! -e $SE_CFG ]; then
-        msg_box "selinux-policy is not installed. Can not enable selinux."
+        msg "selinux-policy is not installed. Can not enable selinux."
         return 0
     fi
 
@@ -960,11 +960,11 @@ selinux()
     if [[ "$SE_MODE" == "Enforcing" ]]; then
         if [[ "$1" == "enforcing" ]]; then
             selinux_enable $1
-            msg_box "SELinux is set to $1 mode"
+            msg "SELinux is set to $1 mode"
         elif [[ "$1" == "permissive" ]]; then
             setenforce 0
             selinux_enable $1
-            msg_box "SELinux is now set to $1 mode"
+            msg "SELinux is now set to $1 mode"
         elif [[ "$1" == "disabled" ]]; then
             selinux_disable
             SGST_REBOOT=1
@@ -975,10 +975,10 @@ selinux()
         if [[ "$1" == "enforcing" ]]; then
             setenforce 1
             selinux_enable $1
-            msg_box "SELinux is now set to $1 mode"
+            msg "SELinux is now set to $1 mode"
         elif [[ "$1" == "permissive" ]]; then
             selinux_enable $1
-            msg_box "SELinux is set to $1 mode"
+            msg "SELinux is set to $1 mode"
         elif [[ "$1" == "disabled" ]]; then
             selinux_disable
             SGST_REBOOT=1
@@ -988,14 +988,14 @@ selinux()
     if [[ "$SE_MODE" == "Disabled" ]]; then
         if [[ "$1" == "enforcing" ]]; then
             selinux_enable $1
-            msg_box "$MSG_RLB"
+            msg "$MSG_RLB"
             SGST_REBOOT=1
         elif [[ "$1" == "permissive" ]]; then
             selinux_enable $1
-            msg_box "$MSG_RLB"
+            msg "$MSG_RLB"
             SGST_REBOOT=1
         elif [[ "$1" == "disabled" ]]; then
-            msg_box "SELinux is already disabled"
+            msg "SELinux is already disabled"
             sed -i 's/^SELINUX=.*/SELINUX=disabled/' $SE_CFG
             if ! grep -q "selinux=0" $CMD_TXT; then
                 sed -i '1s/$/ selinux=0/' $CMD_TXT
@@ -1012,7 +1012,7 @@ selinux_disable()
     if ! grep -q "selinux=0" $CMD_TXT; then sed -i '1s/$/ selinux=0/' $CMD_TXT; fi
     if grep -q "selinux=1" $CMD_TXT; then sed -i 's/selinux=1/selinux=0/' $CMD_TXT; fi
     sed -i 's/^SELINUX=.*/SELINUX=disabled/' $SE_CFG
-    msg_box "SELinux has been disabled.\n\nPlease reboot your system to apply changes."
+    msg "SELinux has been disabled.\n\nPlease reboot your system to apply changes."
 }
 
 selinux_enable()
@@ -1150,7 +1150,7 @@ menu_selinux()
 
 menu_vc4()
 {
-    msg_box "WARNING" "The Mesa VC4 driver is EXPERIMENTAL and a W.I.P. It will likely cause system instability."
+    msg "WARNING" "The Mesa VC4 driver is EXPERIMENTAL and a W.I.P. It will likely cause system instability."
 
     local MENU_TITLES=(
     "VC4 Driver Selection" "Choose the VC4 driver stack:")
@@ -1260,13 +1260,13 @@ menu_gpu_mem()
     )
 
     declare -A MENU_ACTIONS=(
-    [${MENU_ITEMS[0]}]="cfg_enable gpu_mem 16; msg_box '16 $TXT_GPU_MEM'; break"
-    [${MENU_ITEMS[2]}]="cfg_enable gpu_mem 32; msg_box '32 $TXT_GPU_MEM'; break"
-    [${MENU_ITEMS[4]}]="cfg_enable gpu_mem 64; msg_box '64 $TXT_GPU_MEM'; break"
-    [${MENU_ITEMS[6]}]="cfg_enable gpu_mem 96; msg_box '96 $TXT_GPU_MEM'; break"
-    [${MENU_ITEMS[8]}]="cfg_enable gpu_mem 128; msg_box '128 $TXT_GPU_MEM'; break"
-    [${MENU_ITEMS[10]}]="cfg_enable gpu_mem 192; msg_box '192 $TXT_GPU_MEM'; break"
-    [${MENU_ITEMS[12]}]="cfg_enable gpu_mem 256; msg_box '256 $TXT_GPU_MEM'; break"
+    [${MENU_ITEMS[0]}]="cfg_enable gpu_mem 16; msg '16 $TXT_GPU_MEM'; break"
+    [${MENU_ITEMS[2]}]="cfg_enable gpu_mem 32; msg '32 $TXT_GPU_MEM'; break"
+    [${MENU_ITEMS[4]}]="cfg_enable gpu_mem 64; msg '64 $TXT_GPU_MEM'; break"
+    [${MENU_ITEMS[6]}]="cfg_enable gpu_mem 96; msg '96 $TXT_GPU_MEM'; break"
+    [${MENU_ITEMS[8]}]="cfg_enable gpu_mem 128; msg '128 $TXT_GPU_MEM'; break"
+    [${MENU_ITEMS[10]}]="cfg_enable gpu_mem 192; msg '192 $TXT_GPU_MEM'; break"
+    [${MENU_ITEMS[12]}]="cfg_enable gpu_mem 256; msg '256 $TXT_GPU_MEM'; break"
     )
 
     dialog_menu $MENU_ARGS
@@ -1530,7 +1530,7 @@ show_info()
 {
     sys_info
 
-    msg_box "System Information - $DATE_TIME" \
+    msg "System Information - $DATE_TIME" \
 "<< OS >>
 OS Release: $OS_NAME $OS_VER_ID ($ARCH)
 SELinux Mode: $SE_MODE
@@ -1549,7 +1549,7 @@ CPU Freq Minimum (MHz): $CPU_MIN"
 
 about()
 {
-    msg_box "About $NAME - Version: $VERSION"  "\
+    msg "About $NAME - Version: $VERSION"  "\
 $NAME allows for easy configuration of various \
 system wide options in FedBerry. If you have heavily \
 customised your FedBerry installation, some configure \
