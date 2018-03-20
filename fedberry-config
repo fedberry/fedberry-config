@@ -683,7 +683,7 @@ ask_vc4()
                 if [ $? -eq 0 ]; then
                     FBTURBO_BAK=$(echo $FIND_FBTURBO |sed 's|:.*||')
                     FBTURBO_CONF=$(echo $FBTURBO_BAK |sed 's|\.bak||')
-                    mv -f $FBTURBO_BAK $FBTURBO_CONF
+                    mv -fv $FBTURBO_BAK $FBTURBO_CONF
                 fi
             fi
         else
@@ -700,7 +700,7 @@ ask_vc4()
             FIND_FBTURBO=$(grep -Hs fbturbo /etc/X11/xorg.conf.d/*.conf)
             if [ $? -eq 0 ]; then
                 FBTURBO_CONF=$(echo $FIND_FBTURBO |sed s'|:.*||')
-                mv -f $FBTURBO_CONF $FBTURBO_CONF.bak
+                mv -fv $FBTURBO_CONF $FBTURBO_CONF.bak
             fi
         fi
     fi
