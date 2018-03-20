@@ -278,12 +278,12 @@ dto_write()
 dto_prm_update()
 {
     # 1st arg = DTO name; 2nd arg = new parameter; 3rd arg = new value
-    if [[ $3 != "" ]]; then
+    if [ "$3" != "" ]; then
         sed -i "s/^dtoverlay=$1.*$/dtoverlay=$1,$2=$3/" $CFG_TXT
-    elif [[ $2 != "" ]]; then
+    elif [ "$3" == "" ] && [ "$2" != "" ]; then
         sed -i "s/^dtoverlay=$1.*$/dtoverlay=$1,$2/" $CFG_TXT
         dyn_dto_add $1 $2
-    else
+    elif [ "$2" == "" ] && [ "$1" != "" ]; then
         dyn_dto_add $1
     fi
 }
@@ -399,18 +399,16 @@ dyn_dto_add()
         if ! dtoverlay -l |grep -c "$2"; then
             dtoverlay $1 $2
         fi
-    else
+    elif [ "$2" == "" ]; then
         if ! dtoverlay -l |grep -c "$1"; then
             dtoverlay $1
         fi
     fi
 
-    # If dynamically loading the DTO is successful,
-    # don't suggest a reboot
     [ $? -eq 0 ] && SGST_REBOOT=0
 
     unset DYN_DTO
-}
+} &>$FDSC
 
 
 dyn_dto_rem()
