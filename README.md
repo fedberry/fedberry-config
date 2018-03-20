@@ -5,7 +5,6 @@ A utility for making common FedBerry configuration changes via a simple menu-dri
 * Configure Device Tree Overlays / Parameters
 * Configure various system options & devices including:
   * Mesa VC4 driver
-  * Sigma-Delta on-board audio driver
   * Various 3rd party audio drivers
   * RPi Camera driver
   * Linux Infrared Remote Control (LIRC) support
