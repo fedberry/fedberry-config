@@ -33,6 +33,7 @@ OS_VER_ID=$(awk -F= '/^VERSION_ID/ { print $2 }' $OS_RELEASE)
 RPI_MODEL=$( </sys/firmware/devicetree/base/model tr -d '\0')
 BOARD_REV=$(awk '/Revision/ { print $3 }' /proc/cpuinfo)
 
+
 ### Misc standard messages / args
 TXT_ENB="is currently ENABLED.\n\nDo you want to DISABLE it?"
 TXT_DIS="is currently DISABLED.\n\nDo you want to ENABLE it?"
@@ -41,6 +42,7 @@ TXT_GPU_MEM="MB of system memory has been allocated to the GPU.
 \n\nA reboot is required for the change in GPU memory allocation."
 TXT_RBN="A reboot is required for changes to take affect.
 \n\nDo you want to reboot now?"
+
 
 ### Default DTP & config opt values
 declare -A DEF_VALS=(
@@ -57,6 +59,7 @@ declare -A DEF_VALS=(
     [pwr_led_trigger]=none
     [pwr_led_activelow]=off
     )
+
 
 ### Name references for various DTOs, DTPs & config options
 declare -A REF_NAMES=(
@@ -87,6 +90,7 @@ declare -A REF_NAMES=(
     [vc4-fkms-v3d]="VC4 Mesa/Dispmanx"
     [vc4-kms-v3d]="VC4 Mesa"
     )
+
 
 ### Board manufacturing information
 declare -A MFG_INFO=(
@@ -291,7 +295,7 @@ dto_prm_update()
 
 dto_ask()
 {
-    # reset for each selection 
+    # reset for each selection
     BAILED=0
     DRV_DISABLED=0
 
@@ -523,7 +527,7 @@ cfg_write()
 
 cfg_ask()
 {
-    # reset for each selection 
+    # reset for each selection
     BAILED=0
     OPT_DISABLED=0
 
@@ -1071,7 +1075,7 @@ menu_rpi2_oc()
     rpi_req 2; [ $? == 1 ] && return
 
     yes_no "RPi2 Overclocking" "Please Note: Overclocking your RPi 2 may cause \
-system instability. If your RPi 2 fails to boot, holding down shift during \
+system instability. If your RPi 2B fails to boot, holding down shift during \
 boot up will temporarily disable overclocking.\n\nRefer \
 http://elinux.org/RPi_Overclocking for more information.\n\n
 Do you wish to continue?"
@@ -1683,7 +1687,6 @@ main()
     # if needed, offer a reboot
     ask_reboot
 
-    # clear screen & exit
     exit 0
 }
 
