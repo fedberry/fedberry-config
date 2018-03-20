@@ -278,9 +278,9 @@ dto_write()
 dto_prm_update()
 {
     # 1st arg = DTO name; 2nd arg = new parameter; 3rd arg = new value
-    if [ $3 != "" ]; then
+    if [[ $3 != "" ]]; then
         sed -i "s/^dtoverlay=$1.*$/dtoverlay=$1,$2=$3/" $CFG_TXT
-    elif [ $2 != "" ]; then
+    elif [[ $2 != "" ]]; then
         sed -i "s/^dtoverlay=$1.*$/dtoverlay=$1,$2/" $CFG_TXT
         dyn_dto_add $1 $2
     else
