@@ -839,8 +839,7 @@ swap_add()
     fi
 
     # check for existing swap file
-    CHECK_SWAP=$(swapon --show --noheadings)
-    if [ "$CHECK_SWAP" != "" ]; then
+    if [[ "$(swapon --show --noheadings)" != "" ]]; then
         msg "Existing swap file/partition found, can not proceed."
         return 0
     fi
@@ -1019,8 +1018,8 @@ selinux_disable()
 {
     # Temporarily set permissive mode until selinux is disabled at next boot
     setenforce 0
-    if ! grep -q "selinux=0" $CMD_TXT; then sed -i '1s/$/ selinux=0/' $CMD_TXT; fi
-    if grep -q "selinux=1" $CMD_TXT; then sed -i 's/selinux=1/selinux=0/' $CMD_TXT; fi
+    [ `grep -q "selinux=0" $CMD_TXT` ] || sed -i '1s/$/ selinux=0/' $CMD_TXT
+    [ `grep -q "selinux=1" $CMD_TXT` ] && sed -i 's/selinux=1/selinux=0/' $CMD_TXT
     sed -i 's/^SELINUX=.*/SELINUX=disabled/' $SE_CFG
     msg "SELinux has been disabled.\n\nPlease reboot your system to apply changes."
 }
