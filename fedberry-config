@@ -1290,7 +1290,7 @@ menu_rtc()
     dto_ask i2c-rtc
 
     # check we haven't bailed or disabled the driver
-    [ $BAILED -eq 1 -o $DRV_DISABLED -eq 1 ] && break
+    [ $BAILED -eq 1 -o $DRV_DISABLED -eq 1 ] && return
 
     # ensure nortc is not in cmdline.txt
     sed -i 's/ nortc//' $CMD_TXT &>$FDSC
