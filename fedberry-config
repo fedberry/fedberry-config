@@ -637,7 +637,7 @@ boot_kernel()
     fi
 
     ### Clean and copy over dtb files
-    rm -f $BOOT_DIR/*.dtb
+    rm -fv $BOOT_DIR/*.dtb
 
     if [ $KERN_DOWN -eq 1 ] ; then
         if [ "$ARCH" == "armv7hl" ]; then
@@ -662,7 +662,7 @@ boot_kernel()
     fi
 
     ### Clean and copy overlays for downstream/custom kerenls
-    rm -f $BOOT_DIR/overlays/* &>$FDSC
+    rm -fv $BOOT_DIR/overlays/* &>$FDSC
 
     if [ -d "$DTB_DIR/overlays" ]; then
         cp -v $DTB_DIR/overlays/* $BOOT_DIR/overlays/ &>$FDSC
@@ -916,7 +916,7 @@ rootfs_grow()
 
         if [ "$ROOT_PART" != "$LAST_PART" ]; then
             msg "Root partition $ROOT_PART is not the last partiton. Can not proceed."
-            rm -f /.rootfs-repartition &>$FDSC
+            rm -fv /.rootfs-repartition &>$FDSC
             systemctl disable rootfs-grow.service &>$FDSC
             return 0
         fi
@@ -931,7 +931,7 @@ rootfs_grow()
         # Ensure there is enough space to grow the root partition
         if [ $FREE_SECTS -lt 10 ]; then
             msg "Not enough space remaining on $ROOT_PART. The root parition can not be further expanded."
-            rm -f /.rootfs-repartition &>$FDSC
+            rm -fv /.rootfs-repartition &>$FDSC
             systemctl disable rootfs-grow.service &>$FDSC
             return 0
         fi
@@ -947,7 +947,7 @@ rootfs_grow()
     else
         plymouth message --text="Finalizing expansion of root filesystem."
         resize2fs $ROOT_PART &>$FDSC
-        rm -f /.rootfs-grow /.rootfs-repartition &>$FDSC
+        rm -fv /.rootfs-grow /.rootfs-repartition &>$FDSC
 
         # Don't want it running every boot as its job is already done.
         systemctl disable rootfs-grow.service &>$FDSC
