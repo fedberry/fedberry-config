@@ -1680,7 +1680,7 @@ main()
     # if needed, offer a reboot
     ask_reboot
 
-    exit 0
+    [ $DEBUG == 1 ] && exit 0 || clear; exit 0
 }
 
 
