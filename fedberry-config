@@ -1635,22 +1635,15 @@ sys_info()
 
 cmdline()
 {
-    dbg_chk
-
     CMD_ARG=$2
-
-    if [[ "$CMD_ARG" == "" ]]; then
-        echo "Missing argument"
-        exit 0
-    fi
 
     # we don't want a dialog or questions
     NO_DIALOG=1
 
-    # check for script run requirements
+    dbg_chk
+
     requires
 
-    # check for & clean config.txt if necessary
     cfg_check
 
     # exclude some special cases for the moment
@@ -1704,25 +1697,25 @@ case $1 in
     --dto-disable)
         cmdline dto_disable $2;;
     --dtp-enable)
-        dtp_enable $2;;
+        cmdline dtp_enable $2;;
     --dtp-disable)
-        dtp_disable $2;;
+        cmdline dtp_disable $2;;
     --cfg-enable)
         cmdline cfg_enable $2 ${3:-};;
     --cfg-disable)
         cmdline cfg_enable $2;;
     --rootfs-grow)
-        NO_DIALOG=1 rootfs_grow;;
+        touch /.rootfs-repartition && cmdline rootfs_grow;;
     --bt-enable)
-        NO_DIALOG=1 bt_enable;;
+        cmdline bt_enable;;
     --bt-disable)
-        NO_DIALOG=1 bt_disable;;
+        cmdline bt_disable;;
     --add-swap)
-        NO_DIALOG=1 swap_add $2;;
+        cmdline swap_add $2;;
     --selinux)
-        NO_DIALOG=1 selinux $2;;
+        cmdline selinux $2;;
     --bootsplash)
-        NO_DIALOG=1 bootsplash $2;;
+        cmdline bootsplash $2;;
     --sys-info|-i)
         NO_DIALOG=1 show_info;;
     --debug)
