@@ -69,8 +69,6 @@ rm -rf %{buildroot}
 %post
 %systemd_post rootfs-grow.service
 %systemd_post pi3_disable_pwr_led.service
-touch --no-create %{_datadir}/icons/hicolor || :
-%{_bindir}/gtk-update-icon-cache --quiet %{_datadir}/icons/hicolor || :
 
 
 %preun
@@ -81,8 +79,6 @@ touch --no-create %{_datadir}/icons/hicolor || :
 %postun
 %systemd_postun rootfs-grow.service
 %systemd_postun pi3_disable_pwr_led.service
-touch --no-create %{_datadir}/icons/hicolor || :
-%{_bindir}/gtk-update-icon-cache --quiet %{_datadir}/icons/hicolor || :
 
 
 %files
