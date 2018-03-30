@@ -1,5 +1,5 @@
 #!/bin/bash -
-# Copyright (C) 2017, Vaughan Agrez <devel@agrez.net>
+# Copyright (C) 2018, Vaughan Agrez <devel@agrez.net>
 # fedberry-config is released under GPL licence (version 3)
 # See LICENSE file for copyright and license details
 
@@ -11,8 +11,8 @@
 ### Software
 NAME=fedberry-config
 AUTHORS="Vaughan Agrez"
-YEAR=2017
-VERSION=0.4.2
+YEAR=2018
+VERSION=0.4.3
 BUG_REPORTS="https://github.com/fedberry/fedberry-config"
 
 
