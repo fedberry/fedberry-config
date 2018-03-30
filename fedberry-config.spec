@@ -2,7 +2,7 @@
 %define name    %{bname}-config
 
 Name:       %{name}
-Version:    0.4.2
+Version:    0.4.3
 Release:    1%{?dist}
 License:    GPLv3+
 Summary:    Easy configuration of various system options in FedBerry
@@ -91,6 +91,10 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Fri Mar 30 2018 Vaughan <vaughan at agrez dot net> 0.4.3-1
+- New release
+- Remove executing gtk-update-icon-cache in %%post
+
 * Sat Dec 16 2017 Vaughan <vaughan at agrez dot net> 0.4.2-1
 - New release
 
