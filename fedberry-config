@@ -52,7 +52,6 @@ declare -A DEF_VALS=(
     [i2s]=on
     [spi]=on
     [audio]=on
-    [disable_audio_dither]=1
     [disable_splash]=1
     [act_led_trigger]=none
     [act_led_activelow]=off
