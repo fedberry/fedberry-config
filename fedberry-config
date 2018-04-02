@@ -229,7 +229,7 @@ dto_probe()
 
     # Test config.txt for DTO
     DTO_ENABLED=$(grep -cim1 ^$DTO $CFG_TXT)
-    DTO_DISABLED=$(grep -cim1 ^#$DTO $CFG_TXT)
+    DTO_DISABLED=$(grep -cim1 "^# *$DTO" $CFG_TXT)
 }
 
 
@@ -353,7 +353,7 @@ dtp_probe()
 {
     # Test for config option
     DTP_ENABLED=$(grep -cim1 ^dtparam=$1 $CFG_TXT)
-    DTP_DISABLED=$(grep -cim1 ^#dtparam=$1 $CFG_TXT)
+    DTP_DISABLED=$(grep -cim1 "^# *dtparam=$1" $CFG_TXT)
     DTP_VAL=$(grep -E "^dtparam=$1|^#dtparam=$1" $CFG_TXT| sed "s/.*$1=//")
 }
 
@@ -479,7 +479,7 @@ cfg_probe()
 {
     # Test for config option
     CFG_ENABLED=$(grep -cim1 ^$1 $CFG_TXT)
-    CFG_DISABLED=$(grep -cim1 ^#.*$1 $CFG_TXT)
+    CFG_DISABLED=$(grep -cim1 "^# *$1" $CFG_TXT)
     CFG_VAL=$(grep -E "^$1|^#$1" $CFG_TXT| sed "s/.*$1=//")
 }
 
