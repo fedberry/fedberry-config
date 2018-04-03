@@ -24,6 +24,7 @@ DTO_DIR=$BOOT_DIR/overlays
 MODULES_DIR=/usr/lib/modules
 SE_CFG=/etc/selinux/config
 OS_RELEASE=/etc/os-release
+LOG_FILE=/var/log/$NAME.log
 
 
 ### OS environment / hardware
@@ -113,10 +114,24 @@ declare -A MFG_INFO=(
 # FUNCTION_DEFINITIONS
 ###
 
+log_init()
+{
+    [ -f $LOG_FILE ] && mv $LOG_FILE $LOG_FILE.old || touch $LOG_FILE
+    echo -e "\n##### $NAME - $VERSION - LOG #####" &>$FDSC
+    NO_DIALOG=1 show_info &>>$FDSC; NO_DIALOG=0
+    echo -e "\n" &>>$FDSC
+}
+
+
 dbg_chk()
 {
     if [ $DEBUG -eq 1 ]; then
-        FDSC=/dev/fd/1
+        if [[ $LOG -eq 1 ]]; then
+            FDSC=$LOG_FILE
+            log_init
+        else
+            FDSC=/dev/fd/1
+        fi
     else
         FDSC=/dev/null
     fi
@@ -131,7 +146,7 @@ msg()
         else
             whiptail --msgbox --title "$1" "$2" 20 60
         fi
-        [ $DEBUG == 1 ] && echo -e "$1\n$2" &>$FDSC
+        [ $DEBUG == 1 ] && echo -e "$1\n$2" &>>$FDSC
     else
         echo -e "$1\n\n$2"
     fi
@@ -140,7 +155,7 @@ msg()
 
 yes_no()
 {
-    [ $DEBUG == 1 ] && echo -e "$1\n$2"
+    [ $DEBUG == 1 ] && echo -e "$1\n$2"  &>>$FDSC
 
     if [ -z "$2" ]; then
         whiptail --yesno "$1" 20 60
@@ -419,7 +434,7 @@ dyn_dto_add()
     [ $? -eq 0 ] && SGST_REBOOT=0
 
     unset DYN_DTO
-} &>$FDSC
+} &>>$FDSC
 
 
 dyn_dto_rem()
@@ -428,7 +443,7 @@ dyn_dto_rem()
         dtoverlay -R $1
         [ $? -eq 0 ] && SGST_REBOOT=0
     fi
-} &>$FDSC
+} &>>$FDSC
 
 
 dtp_ask()
@@ -648,31 +663,31 @@ boot_kernel()
 
     if [ $KERN_DOWN -eq 1 ] ; then
         if [ "$ARCH" == "armv7hl" ]; then
-            cp -fv $DTB_DIR/bcm2709* $BOOT_DIR/ &>$FDSC
-            cp -fv $DTB_DIR/bcm2710* $BOOT_DIR/ &>$FDSC
+            cp -fv $DTB_DIR/bcm2709* $BOOT_DIR/ &>>$FDSC
+            cp -fv $DTB_DIR/bcm2710* $BOOT_DIR/ &>>$FDSC
         else
             # assume its armv6hl arch
-            cp -fv $DTB_DIR/dtb/bcm2708* $BOOT_DIR/ &>$FDSC
+            cp -fv $DTB_DIR/dtb/bcm2708* $BOOT_DIR/ &>>$FDSC
         fi
     else
-        cp -fv $DTB_DIR/dtb/bcm28* $BOOT_DIR/ &>$FDSC
+        cp -fv $DTB_DIR/dtb/bcm28* $BOOT_DIR/ &>>$FDSC
     fi
 
     ### Copy selected kernel
     if [ -f $KERNEL_DIR/vmlinuz ]; then
-        cp -fv $KERNEL_DIR/vmlinuz $KERN_IMG &>$FDSC
+        cp -fv $KERNEL_DIR/vmlinuz $KERN_IMG &>>$FDSC
     elif [ -f $BOOT_DIR/$VMLINUZ ]; then
-        cp -fv $BOOT_DIR/$VMLINUZ $KERN_IMG &>$FDSC
+        cp -fv $BOOT_DIR/$VMLINUZ $KERN_IMG &>>$FDSC
     else
         msg "ERROR:" "Can't find selected kernel image. Aborting."
         return 0
     fi
 
     ### Clean and copy overlays for downstream/custom kerenls
-    rm -fv $BOOT_DIR/overlays/* &>$FDSC
+    rm -fv $BOOT_DIR/overlays/* &>>$FDSC
 
     if [ -d "$DTB_DIR/overlays" ]; then
-        cp -v $DTB_DIR/overlays/* $BOOT_DIR/overlays/ &>$FDSC
+        cp -v $DTB_DIR/overlays/* $BOOT_DIR/overlays/ &>>$FDSC
     fi
 
     SGST_REBOOT=1
@@ -708,7 +723,7 @@ vc4_enable()
     for i in /etc/X11/xorg.conf.d /usr/share/X11/xorg.conf.d; do
         FBTURBO_CONF=$(grep -Hsl fbturbo $i/*.conf)
         if [ $? -eq 0 ]; then
-            mv -fv $FBTURBO_CONF $FBTURBO_CONF.bak &>$FDSC
+            mv -fv $FBTURBO_CONF $FBTURBO_CONF.bak &>>$FDSC
         fi
     done
 }
@@ -718,12 +733,12 @@ vc4_disable()
 {
     cfg_enable gpu_mem
     # check for & re-enable fbturbo driver if exists
-    if rpm -q xorg-x11-drv-fbturbo &>$FDSC; then
+    if rpm -q xorg-x11-drv-fbturbo &>>$FDSC; then
         for i in /etc/X11/xorg.conf.d /usr/share/X11/xorg.conf.d; do
             FBTURBO_BAK=$(grep -Hsl fbturbo $i/*.bak)
             if [ $? -eq 0 ]; then
                 FBTURBO_CONF=$(echo $FBTURBO_BAK |sed 's|\.bak||')
-                mv -fv $FBTURBO_BAK $FBTURBO_CONF &>$FDSC
+                mv -fv $FBTURBO_BAK $FBTURBO_CONF &>>$FDSC
             fi
         done
     fi
@@ -747,7 +762,7 @@ pi_camera()
 
 bt_ask()
 {
-    if hcitool dev |grep hci &>$FDSC || systemctl is-enabled brcm43438.service &>$FDSC; then
+    if hcitool dev |grep hci &>>$FDSC || systemctl is-enabled brcm43438.service &>>$FDSC; then
         yes_no "DISABLE RPi 3 Bluetooth" "Do you want to DISABLE bluetooth support for your RPi 3?"
         [ $? == 1 ] && return 0 || bt_disable
     else
@@ -762,7 +777,7 @@ bt_enable()
     rpi_req 3; [ $? == 1 ] && return
 
     # check for software support
-    if ! rpm -q bluetooth-rpi3 &>$FDSC; then
+    if ! rpm -q bluetooth-rpi3 &>>$FDSC; then
         msg "The bluetooth-rpi3 package is not installed, please install.\n\nFor example: dnf install bluetooth-rpi3"
         return 0
         # Need to spend some time figuring out how to wrap dnf with progress bar code
@@ -776,8 +791,8 @@ bt_enable()
     dto_disable pi3-disable-bt
 
     # enable / start systemd service
-    systemctl enable brcm43438.service &>$FDSC
-    systemctl start brcm43438.service &>$FDSC
+    systemctl enable brcm43438.service &>>$FDSC
+    systemctl start brcm43438.service &>>$FDSC
 }
 
 
@@ -789,14 +804,14 @@ bt_disable()
 
     # enable pi3-disable-bt overlay
     dto_enable pi3-disable-bt
-} &>$FDSC
+} &>>$FDSC
 
 
 rpi_req()
 {
     MODEL=$1
     # bail if not the requested model no.
-    if ! echo $RPI_MODEL |grep -c "Raspberry Pi $MODEL" &>$FDSC; then
+    if ! echo $RPI_MODEL |grep -c "Raspberry Pi $MODEL" &>>$FDSC; then
         msg "Raspberry Pi $MODEL Model B not found, can not proceed"
         return 1
     else
@@ -894,10 +909,10 @@ swap_add()
     # fallocate -l '$1'M /swapfile
 
     # world readable swap files are a huge local vulnerability
-    chmod 600 /swapfile &>$FDSC
+    chmod 600 /swapfile &>>$FDSC
 
     # activate it
-    swapon /swapfile &>$FDSC
+    swapon /swapfile &>>$FDSC
 
     # enable it at boot
     echo "/swapfile swap swap defaults 0 0" >>/etc/fstab
@@ -937,8 +952,8 @@ rootfs_grow()
 
         if [ "$ROOT_PART" != "$LAST_PART" ]; then
             msg "Root partition $ROOT_PART is not the last partiton. Can not proceed."
-            rm -fv /.rootfs-repartition &>$FDSC
-            systemctl disable rootfs-grow.service &>$FDSC
+            rm -fv /.rootfs-repartition &>>$FDSC
+            systemctl disable rootfs-grow.service &>>$FDSC
             return 0
         fi
 
@@ -952,26 +967,26 @@ rootfs_grow()
         # Ensure there is enough space to grow the root partition
         if [ $FREE_SECTS -lt 10 ]; then
             msg "Not enough space remaining on $ROOT_PART. The root parition can not be further expanded."
-            rm -fv /.rootfs-repartition &>$FDSC
-            systemctl disable rootfs-grow.service &>$FDSC
+            rm -fv /.rootfs-repartition &>>$FDSC
+            systemctl disable rootfs-grow.service &>>$FDSC
             return 0
         fi
 
         # Uggh! I know, this is an ugly hack but at the moment I just don't trust parted
         # to do the job on SD cards >=64GB. It seems to mess things up!
-        echo -e "\np\nd\n$PART_NUM\nn\np\n$PART_NUM\n$START_SECT\n\nw"| fdisk $BLK_DEV &>$FDSC
+        echo -e "\np\nd\n$PART_NUM\nn\np\n$PART_NUM\n$START_SECT\n\nw"| fdisk $BLK_DEV &>>$FDSC
 
         touch /.rootfs-grow
-        systemctl enable rootfs-grow.service &>$FDSC
+        systemctl enable rootfs-grow.service &>>$FDSC
         plymouth message --text="Rebooting Fedberry" && sleep 1
-        systemctl reboot &>$FDSC
+        systemctl reboot &>>$FDSC
     else
         plymouth message --text="Finalizing expansion of root filesystem."
-        resize2fs $ROOT_PART &>$FDSC
-        rm -fv /.rootfs-grow /.rootfs-repartition &>$FDSC
+        resize2fs $ROOT_PART &>>$FDSC
+        rm -fv /.rootfs-grow /.rootfs-repartition &>>$FDSC
 
         # Don't want it running every boot as its job is already done.
-        systemctl disable rootfs-grow.service &>$FDSC
+        systemctl disable rootfs-grow.service &>>$FDSC
     fi
 }
 
@@ -1071,8 +1086,8 @@ led_ask()
             dtp_enable "$LED"_led_trigger
             echo 0 >/sys/class/leds/$LED_SYS/brightness
             echo none >/sys/class/leds/$LED_SYS/trigger
-            if echo $RPI_MODEL |grep -c "Pi 3" &>$FDSC && [[ "$1" = PWR ]]; then
-                systemctl enable pi3_disable_pwr_led.service &>$FDSC
+            if echo $RPI_MODEL |grep -c "Pi 3" &>>$FDSC && [[ "$1" = PWR ]]; then
+                systemctl enable pi3_disable_pwr_led.service &>>$FDSC
             fi
         else
             dtp_disable "$LED"_led_activelow
@@ -1081,8 +1096,8 @@ led_ask()
             if [[ "$1" = ACT ]]; then
                 echo mmc0 >/sys/class/leds/$LED_SYS/trigger
             fi
-            if echo $RPI_MODEL |grep -c "Pi 3" &>$FDSC && [[ "$1" = PWR ]]; then
-                systemctl disable pi3_disable_pwr_led.service &>$FDSC
+            if echo $RPI_MODEL |grep -c "Pi 3" &>>$FDSC && [[ "$1" = PWR ]]; then
+                systemctl disable pi3_disable_pwr_led.service &>>$FDSC
             fi
         fi
     fi
@@ -1327,7 +1342,7 @@ menu_rtc()
     [ $BAILED -eq 1 -o $DRV_DISABLED -eq 1 ] && return
 
     # ensure nortc is not in cmdline.txt
-    sed -i 's/ nortc//' $CMD_TXT &>$FDSC
+    sed -i 's/ nortc//' $CMD_TXT &>>$FDSC
 
     local MENU_TITLES=(
     "RTC Device Selection" "Choose your I2C Real Time Clock device")
@@ -1763,6 +1778,8 @@ case $1 in
         NO_DIALOG=1 show_info;;
     --debug)
         DEBUG=1 main;;
+    --log)
+        DEBUG=1 LOG=1 main;;
     --help|-h)
         usage;;
     --version|-v)
