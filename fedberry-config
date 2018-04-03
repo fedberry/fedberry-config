@@ -203,6 +203,15 @@ dialog_menu()
         SEL=$("${DLG_CMD[@]}" "${ITEMS[@]}" 3>&1 1>&2 2>&3)
         RETVAL=$?
 
+        if [ $DEBUG == 1 ]; then
+            echo -e "Menu: ${TITLE[0]}\nItems: ${ITEMS[@]}\nActions: ${ACTIONS[@]}" &>>$FDSC
+            if [ $RETVAL == 0 ]; then
+                echo -e "Selection:${ACTIONS[$SEL]}\n" &>>$FDSC
+            else
+                echo -e "No selection\n" &>>$FDSC
+            fi
+        fi
+
         case $RETVAL in
             0) eval ${ACTIONS[$SEL]} ;;
             1) break ;;
@@ -659,7 +668,7 @@ boot_kernel()
     fi
 
     ### Clean and copy over dtb files
-    rm -fv $BOOT_DIR/*.dtb
+    rm -fv $BOOT_DIR/*.dtb &>>$FDSC
 
     if [ $KERN_DOWN -eq 1 ] ; then
         if [ "$ARCH" == "armv7hl" ]; then
@@ -1699,7 +1708,7 @@ cmdline()
     # Exclude some special DTO's for the moment
     for i in ${DTO_EXCLUDE[*]}; do
         if [[ "$CMD_ARG" == "$i" ]]; then
-            echo "Enabling/disabling ${REF_NAMES[$CMD_ARG]} via cmdline is currently unsupported"
+            msg "Enabling/disabling ${REF_NAMES[$CMD_ARG]} via cmdline is currently unsupported"
             exit 0
         fi
     done
