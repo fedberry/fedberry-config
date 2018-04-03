@@ -681,13 +681,14 @@ ask_vc4()
             cfg_enable gpu_mem
             # check for & re-enable fbturbo driver if exists
             if rpm -q xorg-x11-drv-fbturbo > $FDSC; then
-                FIND_FBTURBO=$(grep -Hs fbturbo /etc/X11/xorg.conf.d/*.bak)
-                if [ $? -eq 0 ]; then
-                    FBTURBO_BAK=$(echo $FIND_FBTURBO |sed 's|:.*||')
-                    FBTURBO_CONF=$(echo $FBTURBO_BAK |sed 's|\.bak||')
-                    mv -fv $FBTURBO_BAK $FBTURBO_CONF
-                fi
-            fi
+                for i in /etc/X11/xorg.conf.d /usr/share/X11/xorg.conf.d; do
+                    FBTURBO_BAK=$(grep -Hsl fbturbo $i/*.bak)
+                    if [ $? -eq 0 ]; then
+                        FBTURBO_CONF=$(echo $FBTURBO_BAK |sed 's|\.bak||')
+                        mv -fv $FBTURBO_BAK $FBTURBO_CONF
+                    fi
+                done
+             fi
         else
             cfg_disable gpu_mem
             # currently conflicts with pi camera requirements
@@ -699,11 +700,12 @@ ask_vc4()
                 dto_disable vc4-fkms-v3d
             fi
             # check fbturbo driver conf and disable if exists
-            FIND_FBTURBO=$(grep -Hs fbturbo /etc/X11/xorg.conf.d/*.conf)
-            if [ $? -eq 0 ]; then
-                FBTURBO_CONF=$(echo $FIND_FBTURBO |sed s'|:.*||')
-                mv -fv $FBTURBO_CONF $FBTURBO_CONF.bak
-            fi
+            for i in /etc/X11/xorg.conf.d /usr/share/X11/xorg.conf.d; do
+                FBTURBO_CONF=$(grep -Hsl fbturbo $i/*.conf)
+                if [ $? -eq 0 ]; then
+                    mv -fv $FBTURBO_CONF $FBTURBO_CONF.bak
+                fi
+            done
         fi
     fi
 }
