@@ -159,8 +159,9 @@ ask_reboot()
 
         if [ $? == 0 ]; then
             sync
-            # add a timer option here to delay reboot by 5 secs?
-            shutdown -r now
+            msg "System will reboot in 5 secs"
+            sleep 5
+            systemctl reboot &>$FDSC
             exit 0
         fi
     fi
