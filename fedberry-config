@@ -673,40 +673,52 @@ boot_kernel()
 }
 
 
-ask_vc4()
+vc4_ask()
 {
     DYN_DTO=false dto_ask $1
     if [[ $BAILED -ne 1 ]] && [[ $NO_OVERLAY -ne 1 ]]; then
         if [[ $DRV_DISABLED -eq 1 ]]; then
-            cfg_enable gpu_mem
-            # check for & re-enable fbturbo driver if exists
-            if rpm -q xorg-x11-drv-fbturbo > $FDSC; then
-                for i in /etc/X11/xorg.conf.d /usr/share/X11/xorg.conf.d; do
-                    FBTURBO_BAK=$(grep -Hsl fbturbo $i/*.bak)
-                    if [ $? -eq 0 ]; then
-                        FBTURBO_CONF=$(echo $FBTURBO_BAK |sed 's|\.bak||')
-                        mv -fv $FBTURBO_BAK $FBTURBO_CONF
-                    fi
-                done
-             fi
+            vc4_disable
         else
-            cfg_disable gpu_mem
-            # currently conflicts with pi camera requirements
-            cfg_disable start_x
-            # the two vc4 overlays conflict with one another
-            if [ "$1" == "vc4-fkms-v3d" ]; then
-                dto_disable vc4-kms-v3d
-            elif [ "$1" == "vc4-kms-v3d" ]; then
-                dto_disable vc4-fkms-v3d
-            fi
-            # check fbturbo driver conf and disable if exists
-            for i in /etc/X11/xorg.conf.d /usr/share/X11/xorg.conf.d; do
-                FBTURBO_CONF=$(grep -Hsl fbturbo $i/*.conf)
-                if [ $? -eq 0 ]; then
-                    mv -fv $FBTURBO_CONF $FBTURBO_CONF.bak
-                fi
-            done
+            vc4_enable $1
         fi
+    fi
+}
+
+
+vc4_enable()
+{
+    cfg_disable gpu_mem
+    # currently conflicts with pi camera requirements
+    cfg_disable start_x
+    # the two vc4 overlays conflict with one another
+    if [ "$1" == "vc4-fkms-v3d" ]; then
+        dto_disable vc4-kms-v3d
+    elif [ "$1" == "vc4-kms-v3d" ]; then
+        dto_disable vc4-fkms-v3d
+    fi
+    # check fbturbo driver conf and disable if exists
+    for i in /etc/X11/xorg.conf.d /usr/share/X11/xorg.conf.d; do
+        FBTURBO_CONF=$(grep -Hsl fbturbo $i/*.conf)
+        if [ $? -eq 0 ]; then
+            mv -fv $FBTURBO_CONF $FBTURBO_CONF.bak &>$FDSC
+        fi
+    done
+}
+
+
+vc4_disable()
+{
+    cfg_enable gpu_mem
+    # check for & re-enable fbturbo driver if exists
+    if rpm -q xorg-x11-drv-fbturbo &>$FDSC; then
+        for i in /etc/X11/xorg.conf.d /usr/share/X11/xorg.conf.d; do
+            FBTURBO_BAK=$(grep -Hsl fbturbo $i/*.bak)
+            if [ $? -eq 0 ]; then
+                FBTURBO_CONF=$(echo $FBTURBO_BAK |sed 's|\.bak||')
+                mv -fv $FBTURBO_BAK $FBTURBO_CONF &>$FDSC
+            fi
+        done
     fi
 }
 
@@ -1163,6 +1175,18 @@ menu_selinux()
 
 menu_vc4()
 {
+    # First, check for enabled vc4 & offer to disable
+    for i in vc4-fkms-v3d vc4-kms-v3d; do
+        dto_probe $i
+        if [ $DTO_ENABLED == 1 ]; then
+            yes_no "${REF_NAMES[$i]} $TXT_ENB"
+            if [ $? == 0 ]; then
+                dto_disable $i
+                vc4_disable; return
+            fi
+        fi
+    done
+
     msg "WARNING" "The Mesa VC4 driver is EXPERIMENTAL and a W.I.P. It will likely cause system instability."
 
     local MENU_TITLES=(
@@ -1175,8 +1199,8 @@ menu_vc4()
     "2. VC4 HDMI/HVS/V3D " "DRM VC4 HDMI/HVS/V3D driver")
 
     declare -A MENU_ACTIONS=(
-    [${MENU_ITEMS[0]}]="ask_vc4 vc4-fkms-v3d ; break"
-    [${MENU_ITEMS[2]}]="ask_vc4 vc4-kms-v3d ; break")
+    [${MENU_ITEMS[0]}]="vc4_ask vc4-fkms-v3d; break"
+    [${MENU_ITEMS[2]}]="vc4_ask vc4-kms-v3d; break")
 
     dialog_menu $MENU_ARGS
 }
