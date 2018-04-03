@@ -131,6 +131,7 @@ msg()
         else
             whiptail --msgbox --title "$1" "$2" 20 60
         fi
+        [ $DEBUG == 1 ] && echo -e "$1\n$2" &>$FDSC
     else
         echo -e "$1\n\n$2"
     fi
@@ -139,6 +140,7 @@ msg()
 
 yes_no()
 {
+    [ $DEBUG == 1 ] && echo -e "$1\n$2"
     if [ -z "$2" ]; then
         whiptail --yesno "$1" 20 60
     else
