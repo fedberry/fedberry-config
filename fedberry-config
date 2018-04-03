@@ -44,6 +44,10 @@ TXT_RBN="A reboot is required for changes to take affect.
 \n\nDo you want to reboot now?"
 
 
+# Exclude some DTO's from the cmdline
+DTO_EXCLUDE=(vc4-kms-v3d vc4-fkms-v3d start_x)
+
+
 ### Default DTP & config opt values
 declare -A DEF_VALS=(
     [gpu_mem]=32
@@ -1612,6 +1616,8 @@ Configuration of various system wide options in FedBerry.
 --rootfs-grow               Expand (grow) root filesystem on SD card
 --bt-enable                 Enable bluetooth support for RPi3
 --bt-disable                Disable bluetooth support for RPi3
+--vc4-enable                Enable DRM VC4 V3D driver (Dispmanx)
+--vc4-disable               Disable DRM VC4 V3D driver
 --add-swap <size in MB>     Add and enable a swap file
 --selinux <option>          Set SELinux mode (enforcing, permissive, disabled)
 --bootsplash <option>       Plymouth graphical bootsplash (enable, disable)
@@ -1672,11 +1678,13 @@ cmdline()
 
     cfg_check
 
-    # exclude some special cases for the moment
-    if [[ "$CMD_ARG" == "vc4-kms-v3d" ]] || [[ "$CMD_ARG" == "start_x" ]]; then
-        echo "Enabling/disabling ${REF_NAMES[$CMD_ARG]} via cmdline is currently unsupported"
-        exit 0
-    fi
+    # Exclude some special DTO's for the moment
+    for i in ${DTO_EXCLUDE[*]}; do
+        if [[ "$CMD_ARG" == "$i" ]]; then
+            echo "Enabling/disabling ${REF_NAMES[$CMD_ARG]} via cmdline is currently unsupported"
+            exit 0
+        fi
+    done
 
     # weed out '-overlay' in dto names
     if [[ "$1" == "dto_enable" ]] || [[ "$1" == "dto_disable" ]]; then
@@ -1736,6 +1744,12 @@ case $1 in
         cmdline bt_enable;;
     --bt-disable)
         cmdline bt_disable;;
+    --vc4-enable)
+        DYN_DTO=false DTO_EXCLUDE=() cmdline dto_enable vc4-fkms-v3d
+        vc4_enable vc4-fkms-v3d;;
+    --vc4-disable)
+        DYN_DTO=false DTO_EXCLUDE=() cmdline dto_disable vc4-fkms-v3d
+        vc4_disable;;
     --add-swap)
         cmdline swap_add $2;;
     --selinux)
