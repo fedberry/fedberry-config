@@ -1095,7 +1095,7 @@ led_ask()
             dtp_enable "$LED"_led_trigger
             echo 0 >/sys/class/leds/$LED_SYS/brightness
             echo none >/sys/class/leds/$LED_SYS/trigger
-            if echo $RPI_MODEL |grep -c "Pi 3" &>>$FDSC && [[ "$1" = PWR ]]; then
+            if echo $RPI_MODEL |grep -c "Pi 3 Model B Rev" &>>$FDSC && [[ "$1" = PWR ]]; then
                 systemctl enable pi3_disable_pwr_led.service &>>$FDSC
             fi
         else
@@ -1105,7 +1105,7 @@ led_ask()
             if [[ "$1" = ACT ]]; then
                 echo mmc0 >/sys/class/leds/$LED_SYS/trigger
             fi
-            if echo $RPI_MODEL |grep -c "Pi 3" &>>$FDSC && [[ "$1" = PWR ]]; then
+            if echo $RPI_MODEL |grep -c "Pi 3 Model B Rev" &>>$FDSC && [[ "$1" = PWR ]]; then
                 systemctl disable pi3_disable_pwr_led.service &>>$FDSC
             fi
         fi
