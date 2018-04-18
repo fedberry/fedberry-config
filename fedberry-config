@@ -297,7 +297,7 @@ dto_write()
 {
     if [ $1 == "enable" ]; then
         dtree_enable
-        sed -i "s/^#$DTO/$DTO/" $CFG_TXT
+        sed -i "s/^# *$DTO/$DTO/" $CFG_TXT
         dyn_dto_add $2
     elif [ $1 == "add" ]; then
         dtree_enable
@@ -415,7 +415,7 @@ dtp_disable()
 dtp_write()
 {
     if [ $1 == "enable" ]; then
-        sed -i "s/^#dtparam=$2/dtparam=$2/" $CFG_TXT
+        sed -i "s/^# *dtparam=$2/dtparam=$2/" $CFG_TXT
     elif [ $1 == "add" ]; then
         echo "dtparam=$2=${DEF_VALS[$2]}" >> $CFG_TXT
     elif [ $1 == "disable" ]; then
@@ -547,7 +547,7 @@ cfg_disable()
 cfg_write()
 {
     if [ $1 == "enable" ]; then
-        sed -i "s/^#.*$2/$2/" $CFG_TXT
+        sed -i "s/^# *$2/$2/" $CFG_TXT
     elif [ $1 == "add" ]; then
         echo "$2=${DEF_VALS[$2]}" >> $CFG_TXT
     elif [ $1 == "disable" ]; then
