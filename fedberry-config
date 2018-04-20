@@ -177,8 +177,8 @@ ask_reboot()
 
         if [ $? == 0 ]; then
             sync
-            msg "System will reboot in 5 secs"
             setsid sleep 5 && systemctl reboot &
+            msg "System will reboot in 5 secs"
             exit 0
         fi
     fi
