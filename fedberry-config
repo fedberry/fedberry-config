@@ -12,7 +12,7 @@
 NAME=fedberry-config
 AUTHORS="Vaughan Agrez"
 YEAR=2018
-VERSION=0.4.4
+VERSION=0.4.5
 BUG_REPORTS="https://github.com/fedberry/fedberry-config"
 
 
