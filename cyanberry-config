@@ -678,7 +678,11 @@ rootfs_grow()
         systemctl reboot &>/dev/null
     else
         ROOT_PART=$(mount |grep 'on / type'|awk '{ print $1 }')
-        resize2fs $ROOT_PART &>/dev/null
+	if mount | grep -q 'on / type ext4'; then
+	        resize2fs $ROOT_PART &>/dev/null
+	elif mount | grep -q 'on / type btrfs'; then
+		btrfs filesystem resize max /
+	fi
         rm -f /.rootfs-grow /.rootfs-repartition &>/dev/null
         # Don't want it running every boot as its job is already done.
         systemctl disable rootfs-grow.service &>/dev/null
