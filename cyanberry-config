@@ -681,7 +681,7 @@ rootfs_grow()
 	if mount | grep -q 'on / type ext4'; then
 	        resize2fs $ROOT_PART &>/dev/null
 	elif mount | grep -q 'on / type btrfs'; then
-		btrfs filesystem resize max /
+		btrfs filesystem resize max / &>/dev/null
 	fi
         rm -f /.rootfs-grow /.rootfs-repartition &>/dev/null
         # Don't want it running every boot as its job is already done.
