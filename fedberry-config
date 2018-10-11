@@ -1218,13 +1218,13 @@ menu_vc4()
     msg "WARNING" "The Mesa VC4 driver is EXPERIMENTAL and a W.I.P. It will likely cause system instability."
 
     local MENU_TITLES=(
-    "VC4 Driver Selection" "Choose the VC4 driver stack:")
+    "VC4 Driver Selection" "Choose the VC4 driver:")
 
     local MENU_BUTTONS=("Select" "Cancel")
 
     local MENU_ITEMS=(
-    "1. VC4 V3D + DispmanX " "DRM VC4 V3D driver using dispmanx display stack"
-    "2. VC4 HDMI/HVS/V3D " "DRM VC4 HDMI/HVS/V3D driver")
+    "1. VC4 Fake KMS " "DRM VC4 driver using dispmanx display stack (fake KMS)"
+    "2. VC4 KMS " "Full KMS DRM VC4 HDMI/HVS/V3D driver")
 
     declare -A MENU_ACTIONS=(
     [${MENU_ITEMS[0]}]="vc4_ask vc4-fkms-v3d; break"
