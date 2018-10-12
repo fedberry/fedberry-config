@@ -12,7 +12,7 @@
 NAME=fedberry-config
 AUTHORS="Vaughan Agrez"
 YEAR=2018
-VERSION=0.4.5
+VERSION=0.4.6
 BUG_REPORTS="https://github.com/fedberry/fedberry-config"
 
 
@@ -954,7 +954,7 @@ rootfs_grow()
         BLK_DEV=$(echo ${ROOT_PART//[p,1-9]/})
         DEV_INFO=$(fdisk -l $BLK_DEV)
         PART_INFO=( $(echo "$DEV_INFO" |awk 'END{print}') )
-        LAST_PART=$(echo ${PART_INFO[0]})    
+        LAST_PART=$(echo ${PART_INFO[0]})
 
         if [ "$ROOT_PART" != "$LAST_PART" ]; then
             msg "Root partition $ROOT_PART is not the last partiton. Can not proceed."
