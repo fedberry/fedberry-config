@@ -1112,6 +1112,25 @@ led_ask()
 }
 
 
+alsa_output()
+{
+    if [ -f /proc/asound/version ]; then
+        if [ ! -f /usr/bin/amixer ]; then
+            msg "ERROR: Amixer not found." "Please install alsa-utils package."
+        else
+            amixer cset numid=3 "$1" &>>$FDSC
+            if [ $? -eq 0 ]; then
+                msg "ALSA audio output set to: $2"
+            else
+                msg "ERROR" "FAILED to set ALSA output to: $2\n\nPlease check logs."
+            fi
+        fi
+    else
+        msg "ERROR" "FAILED to set ALSA output to: $2\n\nALSA sound system is not running!"
+    fi
+}
+
+
 menu_rpi2_oc()
 {
     rpi_req 2; [ $? == 1 ] && return
@@ -1495,13 +1514,38 @@ menu_audio()
     local MENU_BUTTONS=("Select" "Cancel")
 
     local MENU_ITEMS=(
-    "1. RPi Audio" "Configure on-board ALSA audio interface"
-    "2. 3rd Party Devices" "Configure 3rd party audio devices"
+    "1. RPi Audio" "Enable/Disable on-board ALSA interface"
+    "2. RPi ALSA Out" "Choose ALSA audio output"
+    "3. 3rd Party Devices" "Configure 3rd party audio devices"
     )
 
     declare -A MENU_ACTIONS=(
     [${MENU_ITEMS[0]}]="dtp_ask audio"
-    [${MENU_ITEMS[2]}]=menu_audio_3rd
+    [${MENU_ITEMS[2]}]=menu_alsa_out
+    [${MENU_ITEMS[4]}]=menu_audio_3rd
+    )
+
+    dialog_menu $MENU_ARGS
+}
+
+
+menu_alsa_out()
+{
+    local MENU_TITLES=(
+    "Choose ALSA audio output" "Select an Option")
+
+    local MENU_BUTTONS=("Select" "Cancel")
+
+    local MENU_ITEMS=(
+    "1. Auto" "Auto ALSA output"
+    "2. Force Analog" "Force output to headphone jack (analog)"
+    "3. Force HDMI" "Force output to HDMI"
+    )
+
+    declare -A MENU_ACTIONS=(
+    [${MENU_ITEMS[0]}]="alsa_output 0 auto"
+    [${MENU_ITEMS[2]}]="alsa_output 1 analog"
+    [${MENU_ITEMS[4]}]="alsa_output 2 HDMI"
     )
 
     dialog_menu $MENU_ARGS
