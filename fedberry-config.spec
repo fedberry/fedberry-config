@@ -2,19 +2,19 @@
 %define name    %{bname}-config
 
 Name:       %{name}
-Version:    0.4.5
+Version:    0.4.6
 Release:    1%{?dist}
 License:    GPLv3+
 Summary:    Easy configuration of various system options in FedBerry
 Group:      Applications/System
-URL:        https://github.com/fedberry/fedberry-config
-Source0:    https://raw.githubusercontent.com/%{bname}/%{name}/master/%{name}
-Source1:    https://raw.githubusercontent.com/%{bname}/%{name}/master/LICENSE
-Source2:    https://raw.githubusercontent.com/%{bname}/%{name}/master/README.md
-Source3:    https://raw.githubusercontent.com/%{bname}/%{name}/master/rootfs-grow.service
-Source4:    https://raw.githubusercontent.com/%{bname}/%{name}/master/%{name}.desktop
-Source5:    https://raw.githubusercontent.com/%{bname}/%{name}/master/%{name}.svg
-Source6:    https://raw.githubusercontent.com/%{bname}/%{name}/master/pi3_disable_pwr_led.service
+URL:        https://github.com/fedberry/%{name}
+Source0:    %{url}/raw/master/%{name}
+Source1:    %{url}/raw/master/LICENSE
+Source2:    %{url}/raw/master/README.md
+Source3:    %{url}/raw/master/rootfs-grow.service
+Source4:    %{url}/raw/master/%{name}.desktop
+Source5:    %{url}/raw/master/%{name}.svg
+Source6:    %{url}/raw/master/pi3_disable_pwr_led.service
 BuildArch:  noarch
 Obsoletes:  rootfs-resize
 Conflicts:  rootfs-resize
@@ -61,11 +61,6 @@ rm -rf %{buildroot}
 %{__install} -p %{name}.svg %{buildroot}/%{_datadir}/icons/hicolor/scalable/apps
 
 
-
-%clean
-rm -rf %{buildroot}
-
-
 %post
 %systemd_post rootfs-grow.service
 %systemd_post pi3_disable_pwr_led.service
@@ -91,6 +86,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Fri Oct 12 2018 Vaughan <vaughan at agrez dot net> 0.4.6-1
+- New release
+
 * Fri Apr 20 2018 Vaughan <vaughan at agrez dot net> 0.4.5-1
 - New release
 
@@ -153,7 +151,7 @@ rm -rf %{buildroot}
 - New release
 
 * Thu Apr 28 2016 Vaughan <vaughan at agrez dot net> 0.2.2-2
-- Add %%postun macro 
+- Add %%postun macro
 - Fix build with mock
 
 * Wed Apr 27 2016 Vaughan <vaughan at agrez dot net> 0.2.2-1
