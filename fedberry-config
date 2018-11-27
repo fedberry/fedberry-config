@@ -107,6 +107,7 @@ declare -A MFG_INFO=(
     [a22082]="Embest, China"
     [a32082]="Sony, Japan"
     [a020d3]="Sony, UK"
+    [9020e0]="Sony, UK"
     )
 
 
