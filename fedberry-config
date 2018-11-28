@@ -1260,7 +1260,7 @@ menu_kernel()
     sys_info
 
     local MENU_TITLES=(
-    "Current running kernel version: $CUR_KERN" "Select the kernel version for next boot:")
+    "Current running kernel version: $KERN_VER" "Select the kernel version for next boot:")
 
     local MENU_BUTTONS=("Select" "Cancel")
 
@@ -1644,7 +1644,7 @@ show_info()
 "<< OS >>
 OS Release: $OS_NAME $OS_VER_ID ($ARCH)
 SELinux Mode: $SE_MODE
-Running Kernel: $CUR_KERN
+Running Kernel: $KERN_VER
 Memory Free (kB): $MEM_FREE
 Memory Available (kB): $MEM_AVLB
 \n<< HARDWARE >>
@@ -1727,7 +1727,7 @@ sys_info()
     # OS Info
     DATE_TIME=$(date)
     SE_MODE=$(getenforce)
-    CUR_KERN=$(uname -r |sed 's/.fc[0-9][0-9].'$ARCH'//')
+    KERN_VER=$(uname -r)
     MEM_FREE=$(awk '/MemFree/ { print $2 }' /proc/meminfo)
     MEM_AVLB=$(awk '/MemAvailable/ { print $2 }' /proc/meminfo)
     GPU_MEM=$(vcgencmd get_mem gpu |sed 's/[^0-9]*//g')
