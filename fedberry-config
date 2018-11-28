@@ -1242,13 +1242,23 @@ menu_vc4()
 
     local MENU_BUTTONS=("Select" "Cancel")
 
-    local MENU_ITEMS=(
-    "1. VC4 Fake KMS " "DRM VC4 driver using dispmanx display stack (fake KMS)"
-    "2. VC4 KMS " "Full KMS DRM VC4 HDMI/HVS/V3D driver")
+    ### VC4 'fake' KMS seems to be broken lately (especially for > 4.19.x kernels)
+    sys_info
+    if [[ "$KERN_VER" > "4.19" ]]; then
+        local MENU_ITEMS=(
+        "1. VC4 KMS " "Full KMS DRM VC4 HDMI/HVS/V3D driver")
 
-    declare -A MENU_ACTIONS=(
-    [${MENU_ITEMS[0]}]="vc4_ask vc4-fkms-v3d; break"
-    [${MENU_ITEMS[2]}]="vc4_ask vc4-kms-v3d; break")
+        declare -A MENU_ACTIONS=(
+        [${MENU_ITEMS[0]}]="vc4_ask vc4-kms-v3d; break")
+    else
+        local MENU_ITEMS=(
+        "1. VC4 Fake KMS " "DRM VC4 driver using dispmanx display stack (fake KMS)"
+        "2. VC4 KMS " "Full KMS DRM VC4 HDMI/HVS/V3D driver")
+
+        declare -A MENU_ACTIONS=(
+        [${MENU_ITEMS[0]}]="vc4_ask vc4-fkms-v3d; break"
+        [${MENU_ITEMS[2]}]="vc4_ask vc4-kms-v3d; break")
+    fi
 
     dialog_menu $MENU_ARGS
 }
