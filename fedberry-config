@@ -1345,23 +1345,21 @@ menu_gpu_mem()
     local MENU_BUTTONS=("Select" "Cancel")
 
     local MENU_ITEMS=(
-    "1. 16 MB " "Allocate 16 MB of system memory to the GPU"
-    "2. 32 MB " "Allocate 32 MB of system memory to the GPU"
-    "3. 64 MB " "Allocate 64 MB of system memory to the GPU"
-    "4. 96 MB  " "Allocate 96 MB of system memory to the GPU"
-    "5. 128 MB  " "Allocate 128 MB of system memory to the GPU"
-    "6. 192 MB  " "Allocate 192 MB of system memory to the GPU"
-    "7. 256 MB  " "Allocate 256 MB of system memory to the GPU"
+    "1. 32 MB " "Allocate 32 MB of system memory to the GPU"
+    "2. 64 MB " "Allocate 64 MB of system memory to the GPU"
+    "3. 96 MB  " "Allocate 96 MB of system memory to the GPU"
+    "4. 128 MB  " "Allocate 128 MB of system memory to the GPU"
+    "5. 192 MB  " "Allocate 192 MB of system memory to the GPU"
+    "6. 256 MB  " "Allocate 256 MB of system memory to the GPU"
     )
 
     declare -A MENU_ACTIONS=(
-    [${MENU_ITEMS[0]}]="cfg_enable gpu_mem 16; msg '16 $TXT_GPU_MEM'; break"
-    [${MENU_ITEMS[2]}]="cfg_enable gpu_mem 32; msg '32 $TXT_GPU_MEM'; break"
-    [${MENU_ITEMS[4]}]="cfg_enable gpu_mem 64; msg '64 $TXT_GPU_MEM'; break"
-    [${MENU_ITEMS[6]}]="cfg_enable gpu_mem 96; msg '96 $TXT_GPU_MEM'; break"
-    [${MENU_ITEMS[8]}]="cfg_enable gpu_mem 128; msg '128 $TXT_GPU_MEM'; break"
-    [${MENU_ITEMS[10]}]="cfg_enable gpu_mem 192; msg '192 $TXT_GPU_MEM'; break"
-    [${MENU_ITEMS[12]}]="cfg_enable gpu_mem 256; msg '256 $TXT_GPU_MEM'; break"
+    [${MENU_ITEMS[0]}]="cfg_enable gpu_mem 32; msg '32 $TXT_GPU_MEM'; break"
+    [${MENU_ITEMS[2]}]="cfg_enable gpu_mem 64; msg '64 $TXT_GPU_MEM'; break"
+    [${MENU_ITEMS[4]}]="cfg_enable gpu_mem 96; msg '96 $TXT_GPU_MEM'; break"
+    [${MENU_ITEMS[6]}]="cfg_enable gpu_mem 128; msg '128 $TXT_GPU_MEM'; break"
+    [${MENU_ITEMS[8]}]="cfg_enable gpu_mem 192; msg '192 $TXT_GPU_MEM'; break"
+    [${MENU_ITEMS[10]}]="cfg_enable gpu_mem 256; msg '256 $TXT_GPU_MEM'; break"
     )
 
     dialog_menu $MENU_ARGS
