@@ -1635,11 +1635,11 @@ menu_misc()
     local MENU_BUTTONS=("Select" "Cancel")
 
     local MENU_ITEMS=(
-    "1. LIRC RPi" "Linux Infrared Remote Control for the RPi (LIRC)"
+    "1. GPIO IR" "Infrared receiver input for IR remotes"
     "2. I2C RTC" "Realtime Clock (RTC) support")
 
     declare -A MENU_ACTIONS=(
-    [${MENU_ITEMS[0]}]="dto_ask lirc-rpi"
+    [${MENU_ITEMS[0]}]="dto_ask gpio-ir"
     [${MENU_ITEMS[2]}]=menu_rtc)
 
     dialog_menu $MENU_ARGS
