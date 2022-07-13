@@ -638,51 +638,50 @@ rootfs_grow()
     [ $(cat /proc/cmdline |grep -cim1 nofsresize) -eq 1 ] && return 0
 
     if [ ! -e /.rootfs-grow ]; then
-        # Grab required partition & block device information
-        ROOT_PART=$(mount |grep 'on / type'|awk '{ print $1 }')
-        BLK_DEV="/dev/$(lsblk -no pkname ${ROOT_PART})"
-        DEV_INFO=$(fdisk -l $BLK_DEV)
-        PART_INFO=( $(echo "$DEV_INFO" |awk 'END{print}') )
-        LAST_PART=$(echo ${PART_INFO[0]})
+        ROOTPART=$(lsblk -lno NAME,MOUNTPOINT | sed -E 's/\s+/,/g' | grep ',/$' | cut -d',' -f1)
+        ROOTDEV="/dev/$(lsblk -lno PKNAME /dev/$ROOTPART)"
+        ROOTTYPE=$(lsblk -lno FSTYPE /dev/$ROOTPART)
+        # Get current partition number
+        # PARTNUM=$(lsblk -lno "MAJ:MIN" /dev/$ROOTPART | cut -d':' -f2) - It is not reliable
+        # Use the old school method
+        PARTNUMS=($(echo "$ROOTPART" | grep -oE '[0-9]+'))
+        PARTNUM=${PARTNUMS[-1]}
+        echo "[+] Root partition: $ROOTPART"
+        echo "[+] Device the root partition is in: $ROOTDEV"
+        echo "[+] Root filesystem: $ROOTTYPE"
+        echo "[+] Number of the root partition: $PARTNUM"
 
-        if [ "$ROOT_PART" != "$LAST_PART" ]; then
-            msg_box "Root partition $ROOT_PART is not the last partiton. Can not proceed."
-            rm -f /.rootfs-repartition &>/dev/null
-            return 0
+        if [ "$ROOTDEV" -a "$ROOTPART" -a "$ROOTTYPE" -a "$PARTNUM" ]; then
+            # Get partitions
+            PARTS=($(lsblk -o NAME -ln $ROOTDEV))
+            echo "[+] Last partition of this disk: ${PARTS[-1]}"
+            if [ "$ROOTPART" != "${PARTS[-1]}" ]; then
+                echo "[-] Jesus, don't even think about it; Your partition is not the last partition!"
+                rm /.rootfs-repartition
+	        return 1
+            fi
+            if [ "$DEBUG" ]; then
+                echo "[D] That's all we need to know."
+                exit 0
+            fi
+	    echo "[+] Okay, your root partition is the last partition. Proceeding."
+            # Resize partition
+            # Call sfdisk to grow this partition, gently
+            # It will not touch anything else.
+            echo ', +' | sfdisk --force -N $PARTNUM $ROOTDEV
+            # Okay, we are ready to grow
+            touch "/.rootfs-grow"
+            
+            systemctl enable rootfs-grow.service &>/dev/null
+            systemctl reboot &>/dev/null
         fi
-
-        SIZE_INFO=( $(echo "$DEV_INFO" |grep "Disk $BLK_DEV") )
-        TOTAL_SECTS=$(echo ${SIZE_INFO[6]})
-        START_SECT=$(echo ${PART_INFO[1]})
-        END_SECT=$(echo ${PART_INFO[2]})
-        PART_NUM=$(echo ${ROOT_PART} | sed "s@${BLK_DEV}@@g" | sed "s@p@@g")
-        FREE_SECTS=$(($TOTAL_SECTS - $END_SECT))
-
-        # Ensure there is enough space to grow the root partition
-        if [ $FREE_SECTS -lt 10 ]; then
-            msg_box "Not enough space remaining on $ROOT_PART. The root parition can not be further expanded."
-            rm -f /.rootfs-repartition &>/dev/null
-            return 0
-        fi
-
-        #SECT_INFO=( $(echo "$DEV_INFO" |grep "Sector size") )
-        #SECT_SIZE=$(echo ${SECT_INFO[3]})
-        #msg_box "$(($FREE_SECTS - 1)) sectors available for root parition expansion.\nGrowing $ROOT_PART by $((($FREE_SECTS - 1) * $SECT_SIZE / 1024)) MB"
-
-        # Uggh! I know, this is an ugly hack but at the moment I just don't trust parted
-        # to do the job on SD cards >=64GB. It seems to mess things up!
-        echo -e "\np\nd\n$PART_NUM\nn\np\n$PART_NUM\n$START_SECT\n\nw"| fdisk $BLK_DEV &>/dev/null
-
-        touch /.rootfs-grow
-        systemctl enable rootfs-grow.service &>/dev/null
-        systemctl reboot &>/dev/null
     else
         ROOT_PART=$(mount |grep 'on / type'|awk '{ print $1 }')
-	if mount | grep -q 'on / type ext4'; then
-	        resize2fs $ROOT_PART &>/dev/null
-	elif mount | grep -q 'on / type btrfs'; then
-		btrfs filesystem resize max / &>/dev/null
-	fi
+        if mount | grep -q 'on / type ext4'; then
+            resize2fs $ROOT_PART &>/dev/null
+        elif mount | grep -q 'on / type btrfs'; then
+            btrfs filesystem resize max / &>/dev/null
+        fi
         rm -f /.rootfs-grow /.rootfs-repartition &>/dev/null
         # Don't want it running every boot as its job is already done.
         systemctl disable rootfs-grow.service &>/dev/null
